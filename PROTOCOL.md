@@ -213,7 +213,8 @@ of [getmikan/marketplace](https://github.com/getmikan/marketplace):
 - `category`: the package, `payments` or `tools`. The `adapters` list holds both, so a
   catalog from before the packages, without `category`, holds payment adapters. A payment
   adapter speaks this protocol (1); a tool never does, so a panel that knows no categories
-  never offers a tool as a payment method. A tool's image is `ghcr.io/getmikan/tool-<id>`.
+  never offers a tool as a payment method. A tool's image is `ghcr.io/getmikan/tool-<id>`;
+  its entry adds `kind`, `mode`, `permissions` and `resources` ([PROTOCOL-v2.md](PROTOCOL-v2.md)).
 - `min_panel`: the oldest panel version that may install it.
 - An adapter whose `protocol` the panel does not know is not offered.
 
