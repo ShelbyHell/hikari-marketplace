@@ -55,6 +55,28 @@ func runFails(t *testing.T, want string, args ...string) {
 	}
 }
 
+// realIndex is the catalog of the real packages, every image at digestA.
+func realIndex(t *testing.T) ([]catalog.Manifest, catalog.Index) {
+	t.Helper()
+	ms, err := manifests("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	digests := map[string]string{}
+	for _, m := range ms {
+		digests[m.ID] = digestA
+	}
+	idx, err := catalog.Build(ms, digests, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ms, idx
+}
+
+// digestFlags is a -digest for every real adapter: digestA for yookassa, digestB for the rest.
+var digestFlags = []string{"-digest", "yookassa=" + digestA, "-digest", "cryptobot=" + digestB, "-digest", "platega=" + digestB,
+	"-digest", "rollypay=" + digestB, "-digest", "telegram=" + digestB}
+
 // version is the version the real adapters are at.
 func version(t *testing.T) string {
 	t.Helper()
@@ -95,7 +117,7 @@ func TestSignVerifyRoundTrip(t *testing.T) {
 	pub := throwawayKey(t)
 	out := t.TempDir()
 	v := version(t)
-	runOK(t, "build", "-root", "../..", "-digest", "yookassa="+digestA, "-digest", "cryptobot="+digestB, "-digest", "platega="+digestB, "-digest", "rollypay="+digestB, "-digest", "telegram="+digestB, "-out", out)
+	runOK(t, append([]string{"build", "-root", "../..", "-out", out}, digestFlags...)...)
 	file := filepath.Join(out, "index.json")
 	got := runOK(t, "verify", "-key", pub, file)
 	if !strings.Contains(got, "ok: payments cryptobot ") || !strings.Contains(got, " ghcr.io/getmikan/adapter-cryptobot@"+digestB) ||
@@ -133,11 +155,11 @@ func TestBuildRefuses(t *testing.T) {
 	out := t.TempDir()
 	base := []string{"build", "-root", "../..", "-out", out}
 	runFails(t, "no digest for adapter", append(base, "-digest", "yookassa="+digestA)...)
-	runFails(t, "does not exist", append(base, "-digest", "yookassa="+digestA, "-digest", "cryptobot="+digestB, "-digest", "platega="+digestB, "-digest", "rollypay="+digestB, "-digest", "telegram="+digestB, "-digest", "stripe="+digestA)...)
+	runFails(t, "does not exist", append(slices.Concat(base, digestFlags), "-digest", "stripe="+digestA)...)
 	runFails(t, "two digests", append(base, "-digest", "yookassa="+digestA, "-digest", "yookassa="+digestB)...)
-	runFails(t, "digest", append(base, "-digest", "yookassa=sha256:abc", "-digest", "cryptobot="+digestB, "-digest", "platega="+digestB, "-digest", "rollypay="+digestB, "-digest", "telegram="+digestB)...)
+	runFails(t, "digest", append(slices.Concat(base, digestFlags[2:]), "-digest", "yookassa=sha256:abc")...)
 	t.Setenv("MARKETPLACE_SIGNING_KEY", "")
-	runFails(t, "MARKETPLACE_SIGNING_KEY", append(base, "-digest", "yookassa="+digestA, "-digest", "cryptobot="+digestB, "-digest", "platega="+digestB, "-digest", "rollypay="+digestB, "-digest", "telegram="+digestB)...)
+	runFails(t, "MARKETPLACE_SIGNING_KEY", slices.Concat(base, digestFlags)...)
 	if _, err := os.Stat(filepath.Join(out, "index.json")); err == nil {
 		t.Fatal("a refused build wrote index.json")
 	}
@@ -215,18 +237,7 @@ func TestManifestChecks(t *testing.T) {
 
 // A catalog from before the packages has no categories: its entries are payment adapters.
 func TestIndexWithoutCategories(t *testing.T) {
-	ms, err := manifests("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	digests := map[string]string{}
-	for _, m := range ms {
-		digests[m.ID] = digestA
-	}
-	idx, err := catalog.Build(ms, digests, time.Now())
-	if err != nil {
-		t.Fatal(err)
-	}
+	_, idx := realIndex(t)
 	// Such a catalog held payment adapters only.
 	idx.Adapters = slices.DeleteFunc(idx.Adapters, func(e catalog.Entry) bool { return e.Category != "payments" })
 	for i := range idx.Adapters {
@@ -242,18 +253,7 @@ func TestIndexWithoutCategories(t *testing.T) {
 }
 
 func TestReleasePlanOnlyChangedAdapter(t *testing.T) {
-	ms, err := manifests("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	digests := map[string]string{}
-	for _, m := range ms {
-		digests[m.ID] = digestA
-	}
-	prev, err := catalog.Build(ms, digests, time.Now())
-	if err != nil {
-		t.Fatal(err)
-	}
+	ms, prev := realIndex(t)
 	for i := range ms {
 		if ms[i].ID == "rollypay" {
 			ms[i].Version = "9.0.0"
@@ -330,10 +330,10 @@ func TestBuildWithReusedDigests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p := releasePlan{Build: []buildAdapter{}, Reuse: map[string]string{}}
+	p := releasePlan{Build: []listed{}, Reuse: map[string]string{}}
 	for _, m := range ms {
 		if m.ID == "rollypay" {
-			p.Build = append(p.Build, buildAdapter{ID: m.ID, Version: m.Version, Dir: dir(m), Image: m.Image})
+			p.Build = append(p.Build, listed{ID: m.ID, Version: m.Version, Dir: dir(m), Image: m.Image})
 		} else {
 			p.Reuse[m.ID] = digestA
 		}
@@ -430,18 +430,7 @@ func TestOwnInputsOnly(t *testing.T) {
 // of its image, so a change there does not ask for a new telegram version (which must be a
 // mikan release).
 func TestReleasePlanSelfContainedTool(t *testing.T) {
-	ms, err := manifests("../..")
-	if err != nil {
-		t.Fatal(err)
-	}
-	digests := map[string]string{}
-	for _, m := range ms {
-		digests[m.ID] = digestA
-	}
-	prev, err := catalog.Build(ms, digests, time.Now())
-	if err != nil {
-		t.Fatal(err)
-	}
+	ms, prev := realIndex(t)
 	bumped := slices.Clone(ms)
 	for i := range bumped {
 		if bumped[i].Category == "payments" {
@@ -464,7 +453,7 @@ func TestReleasePlanSelfContainedTool(t *testing.T) {
 		}
 	}
 	p, err = makeReleasePlan("../..", ms, prev, []string{"tools/telegram/adapter.json"})
-	if err != nil || len(p.Build) != 1 || p.Build[0] != (buildAdapter{ID: "telegram", Version: "0.5.1.0", Dir: "tools/telegram", Image: "ghcr.io/getmikan/tool-telegram"}) {
+	if err != nil || len(p.Build) != 1 || p.Build[0] != (listed{ID: "telegram", Version: "0.5.1.0", Dir: "tools/telegram", Image: "ghcr.io/getmikan/tool-telegram"}) {
 		t.Fatalf("a new mikan release: %+v, %v", p, err)
 	}
 }
