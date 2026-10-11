@@ -99,6 +99,9 @@ jobs:
           context: .
           file: ${{ matrix.adapter.dir }}/Dockerfile
           platforms: linux/amd64,linux/arm64
+          # The adapter's version; a tool built from another source (tools/telegram) takes
+          # the release to build from it, the rest ignore it.
+          build-args: VERSION=${{ matrix.adapter.version }}
           push: true
           tags: ${{ matrix.adapter.image }}:${{ matrix.adapter.version }}
           cache-from: type=gha,scope=${{ matrix.adapter.id }}

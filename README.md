@@ -7,8 +7,17 @@ catalog the panel installs them from. They come in packages:
   connects the panel to one payment provider. The panel lists them under Payments →
   «Добавить способ оплаты»; the host pulls the adapter's image by digest and runs it next
   to the panel, on loopback. The contract between them is [PROTOCOL.md](PROTOCOL.md).
-- [`tools/`](tools): tools, such as the Telegram bot. Their protocol is being designed;
-  see [tools/README.md](tools/README.md).
+- [`tools/`](tools): everything else, such as the Telegram bot. They speak protocol 2,
+  [PROTOCOL-v2.md](PROTOCOL-v2.md): they call the panel's API for addons with the
+  permissions the admin approved, and a bot works through the panel's Bot API proxy.
+
+## Tools
+
+| id | | Kind |
+|---|---|---|
+| [`telegram`](tools/telegram) | the official mikan bot: subscription menu, purchases, devices, notices. Built from mikan's source at the release its version names | `bot`, mode `client` |
+
+Each needs panel 0.5.1.0 or later (the bot: the release it is built from).
 
 ## Payment methods
 
@@ -25,11 +34,12 @@ Each needs panel 0.4.3 or later.
 
 ```
 payments/<id>/       one payment adapter: main.go, the provider client, tests, adapter.json, Dockerfile
-tools/<id>/          one tool, laid out the same way
-internal/adapter/    the shared server: env, loopback check, Bearer auth, limits, errors, settings validation
+tools/<id>/          one tool (protocol 2): adapter.json, Dockerfile, its code when it lives here
+internal/adapter/    the shared server of protocol 1: env, loopback check, Bearer auth, limits, errors, settings validation
 internal/catalog/    adapter.json and index.json: types, checks, signing
 cmd/index/           builds and signs dist/index.json; verifies it
-PROTOCOL.md          the protocol, for adapter authors
+PROTOCOL.md          protocol 1, for payment adapter authors
+PROTOCOL-v2.md       protocol 2, for the authors of every other addon
 ```
 
 Go 1.27, standard library only.
@@ -89,9 +99,11 @@ then:
    release public key. It compares the previous release tag with the new commit.
 2. Requires a newer adapter version for changes to its image inputs. Documentation and
    tests alone need no bump. A change to shared server code or Go dependencies requires
-   a version increase for every adapter.
+   a version increase for every adapter whose Dockerfile copies them (not the telegram
+   tool, which builds mikan's source). Versions are `x.y.z`, optionally with a fourth
+   number and a prerelease, as mikan's (`0.5.1.0-rc.6`).
 3. Builds and pushes only changed images for amd64 and arm64, each tagged with its own
-   adapter version. Unchanged image digests come from the verified previous catalog.
+   adapter version (also passed to the build as `VERSION`). Unchanged image digests come from the verified previous catalog.
 4. Signs a new complete catalog and publishes it under an automatic `catalog-<run>-<attempt>`
    tag. The panel reads `releases/latest/download/index.json`.
 

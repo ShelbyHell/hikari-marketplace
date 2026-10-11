@@ -10,6 +10,7 @@ import (
 	"encoding/pem"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -68,7 +69,7 @@ func version(t *testing.T) string {
 	return m.Version
 }
 
-// The real packages: the payment adapters in payments/, with their images.
+// The real packages: the payment adapters in payments/ and the tools in tools/, with their images.
 func TestListRealAdapters(t *testing.T) {
 	var got []listed
 	if err := json.Unmarshal([]byte(runOK(t, "list", "-root", "../..")), &got); err != nil {
@@ -77,11 +78,15 @@ func TestListRealAdapters(t *testing.T) {
 	ids := []string{}
 	for _, l := range got {
 		ids = append(ids, l.ID)
-		if l.Dir != "payments/"+l.ID || l.Image != "ghcr.io/getmikan/adapter-"+l.ID {
+		category, prefix := "payments", "adapter-"
+		if l.ID == "telegram" {
+			category, prefix = "tools", "tool-"
+		}
+		if l.Dir != category+"/"+l.ID || l.Image != "ghcr.io/getmikan/"+prefix+l.ID || l.Version == "" {
 			t.Errorf("%s: %+v", l.ID, l)
 		}
 	}
-	if strings.Join(ids, ",") != "cryptobot,platega,rollypay,yookassa" {
+	if strings.Join(ids, ",") != "cryptobot,platega,rollypay,yookassa,telegram" {
 		t.Fatalf("index list: %v", ids)
 	}
 }
@@ -90,7 +95,7 @@ func TestSignVerifyRoundTrip(t *testing.T) {
 	pub := throwawayKey(t)
 	out := t.TempDir()
 	v := version(t)
-	runOK(t, "build", "-root", "../..", "-digest", "yookassa="+digestA, "-digest", "cryptobot="+digestB, "-digest", "platega="+digestB, "-digest", "rollypay="+digestB, "-out", out)
+	runOK(t, "build", "-root", "../..", "-digest", "yookassa="+digestA, "-digest", "cryptobot="+digestB, "-digest", "platega="+digestB, "-digest", "rollypay="+digestB, "-digest", "telegram="+digestB, "-out", out)
 	file := filepath.Join(out, "index.json")
 	got := runOK(t, "verify", "-key", pub, file)
 	if !strings.Contains(got, "ok: payments cryptobot ") || !strings.Contains(got, " ghcr.io/getmikan/adapter-cryptobot@"+digestB) ||
@@ -107,8 +112,8 @@ func TestSignVerifyRoundTrip(t *testing.T) {
 		t.Fatal("the signature does not verify over the file's bytes")
 	}
 	idx, err := catalog.Verify(data, string(sig), key)
-	if err != nil || idx.Version != 1 || len(idx.Adapters) != 4 || idx.Adapters[3].Digest != digestA || idx.Adapters[3].MinPanel != "0.4.3" ||
-		idx.Adapters[3].Category != "payments" || !bytes.Contains(data, []byte(`"category": "payments"`)) {
+	if err != nil || idx.Version != 1 || len(idx.Adapters) != 5 || idx.Adapters[4].Digest != digestA || idx.Adapters[4].MinPanel != "0.4.3" ||
+		idx.Adapters[4].Category != "payments" || !bytes.Contains(data, []byte(`"category": "payments"`)) {
 		t.Fatalf("index: %v %+v", err, idx)
 	}
 
@@ -128,11 +133,11 @@ func TestBuildRefuses(t *testing.T) {
 	out := t.TempDir()
 	base := []string{"build", "-root", "../..", "-out", out}
 	runFails(t, "no digest for adapter", append(base, "-digest", "yookassa="+digestA)...)
-	runFails(t, "does not exist", append(base, "-digest", "yookassa="+digestA, "-digest", "cryptobot="+digestB, "-digest", "platega="+digestB, "-digest", "rollypay="+digestB, "-digest", "stripe="+digestA)...)
+	runFails(t, "does not exist", append(base, "-digest", "yookassa="+digestA, "-digest", "cryptobot="+digestB, "-digest", "platega="+digestB, "-digest", "rollypay="+digestB, "-digest", "telegram="+digestB, "-digest", "stripe="+digestA)...)
 	runFails(t, "two digests", append(base, "-digest", "yookassa="+digestA, "-digest", "yookassa="+digestB)...)
-	runFails(t, "digest", append(base, "-digest", "yookassa=sha256:abc", "-digest", "cryptobot="+digestB, "-digest", "platega="+digestB, "-digest", "rollypay="+digestB)...)
+	runFails(t, "digest", append(base, "-digest", "yookassa=sha256:abc", "-digest", "cryptobot="+digestB, "-digest", "platega="+digestB, "-digest", "rollypay="+digestB, "-digest", "telegram="+digestB)...)
 	t.Setenv("MARKETPLACE_SIGNING_KEY", "")
-	runFails(t, "MARKETPLACE_SIGNING_KEY", append(base, "-digest", "yookassa="+digestA, "-digest", "cryptobot="+digestB, "-digest", "platega="+digestB, "-digest", "rollypay="+digestB)...)
+	runFails(t, "MARKETPLACE_SIGNING_KEY", append(base, "-digest", "yookassa="+digestA, "-digest", "cryptobot="+digestB, "-digest", "platega="+digestB, "-digest", "rollypay="+digestB, "-digest", "telegram="+digestB)...)
 	if _, err := os.Stat(filepath.Join(out, "index.json")); err == nil {
 		t.Fatal("a refused build wrote index.json")
 	}
@@ -182,14 +187,14 @@ func TestManifestChecks(t *testing.T) {
 
 	// A tool: in tools/, its own image, never the payment protocol (older panels would
 	// offer it as a payment method).
-	tool := strings.NewReplacer(`"category":"payments"`, `"category":"tools"`, `"protocol":1`, `"protocol":2`,
+	tool := strings.NewReplacer(`"category":"payments"`, `"category":"tools"`, `"protocol":1`, `"protocol":2,"kind":"bot"`,
 		"adapter-demo", "tool-tg", `"id":"demo"`, `"id":"tg"`).Replace(ok)
 	write("tools", "tg", tool)
 	var got []listed
 	if err := json.Unmarshal([]byte(runOK(t, "list", "-root", root)), &got); err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 3 || got[2] != (listed{ID: "tg", Dir: "tools/tg", Image: "ghcr.io/getmikan/tool-tg"}) {
+	if len(got) != 3 || got[2] != (listed{ID: "tg", Version: "1.0.0", Dir: "tools/tg", Image: "ghcr.io/getmikan/tool-tg"}) {
 		t.Fatalf("list: %+v", got)
 	}
 	write("tools", "tg", strings.Replace(tool, `"protocol":2`, `"protocol":1`, 1))
@@ -222,6 +227,8 @@ func TestIndexWithoutCategories(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Such a catalog held payment adapters only.
+	idx.Adapters = slices.DeleteFunc(idx.Adapters, func(e catalog.Entry) bool { return e.Category != "payments" })
 	for i := range idx.Adapters {
 		idx.Adapters[i].Category = ""
 	}
@@ -252,12 +259,12 @@ func TestReleasePlanOnlyChangedAdapter(t *testing.T) {
 			ms[i].Version = "9.0.0"
 		}
 	}
-	p, err := makeReleasePlan(ms, prev, []string{"payments/rollypay/rollypay.go", "README.md"})
+	p, err := makeReleasePlan("../..", ms, prev, []string{"payments/rollypay/rollypay.go", "README.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(p.Build) != 1 || p.Build[0].ID != "rollypay" || p.Build[0].Version != "9.0.0" || p.Build[0].Dir != "payments/rollypay" ||
-		p.Build[0].Image != "ghcr.io/getmikan/adapter-rollypay" || len(p.Reuse) != 3 {
+		p.Build[0].Image != "ghcr.io/getmikan/adapter-rollypay" || len(p.Reuse) != 4 {
 		t.Fatalf("plan: %+v", p)
 	}
 	for id, digest := range p.Reuse {
@@ -270,17 +277,17 @@ func TestReleasePlanOnlyChangedAdapter(t *testing.T) {
 			ms[i].Version = prev.Adapters[2].Version
 		}
 	}
-	if _, err := makeReleasePlan(ms, prev, []string{"payments/rollypay/rollypay.go"}); err == nil || !strings.Contains(err.Error(), "bump its version") {
+	if _, err := makeReleasePlan("../..", ms, prev, []string{"payments/rollypay/rollypay.go"}); err == nil || !strings.Contains(err.Error(), "bump its version") {
 		t.Fatalf("unchanged version: %v", err)
 	}
-	if _, err := makeReleasePlan(ms, prev, []string{"internal/adapter/server.go"}); err == nil || !strings.Contains(err.Error(), "bump its version") {
+	if _, err := makeReleasePlan("../..", ms, prev, []string{"internal/adapter/server.go"}); err == nil || !strings.Contains(err.Error(), "bump its version") {
 		t.Fatalf("shared code: %v", err)
 	}
 	// The move from adapters/ to payments/ is a change of every adapter.
-	if _, err := makeReleasePlan(ms, prev, []string{"adapters/rollypay/rollypay.go", "payments/rollypay/rollypay.go"}); err == nil || !strings.Contains(err.Error(), "bump its version") {
+	if _, err := makeReleasePlan("../..", ms, prev, []string{"adapters/rollypay/rollypay.go", "payments/rollypay/rollypay.go"}); err == nil || !strings.Contains(err.Error(), "bump its version") {
 		t.Fatalf("the move: %v", err)
 	}
-	if p, err := makeReleasePlan(ms, prev, []string{"payments/rollypay/README.md", "payments/rollypay/rollypay_test.go"}); err != nil || len(p.Build) != 0 {
+	if p, err := makeReleasePlan("../..", ms, prev, []string{"payments/rollypay/README.md", "payments/rollypay/rollypay_test.go"}); err != nil || len(p.Build) != 0 {
 		t.Fatalf("documentation and tests: %+v, %v", p, err)
 	}
 	for i := range ms {
@@ -288,7 +295,7 @@ func TestReleasePlanOnlyChangedAdapter(t *testing.T) {
 			ms[i].Version = "1.0.2"
 		}
 	}
-	if _, err := makeReleasePlan(ms, prev, []string{"payments/rollypay/rollypay.go"}); err == nil || !strings.Contains(err.Error(), "must be newer") {
+	if _, err := makeReleasePlan("../..", ms, prev, []string{"payments/rollypay/rollypay.go"}); err == nil || !strings.Contains(err.Error(), "must be newer") {
 		t.Fatalf("downgrade: %v", err)
 	}
 }
@@ -305,6 +312,11 @@ func TestCompareVersion(t *testing.T) {
 		{"1.0.0", "1.0.0-rc.1", 1},
 		{"1.0.0-1", "1.0.0-alpha", -1},
 		{"1.0.0", "1.0.0", 0},
+		{"0.5.1.0", "0.5.1.0-rc.6", 1},
+		{"0.5.1.0-rc.10", "0.5.1.0-rc.9", 1},
+		{"0.5.1.1", "0.5.1", 1},
+		{"0.5.1", "0.5.1.0", 0},
+		{"0.5.2", "0.5.1.9", 1},
 	} {
 		if got := compareVersion(tc.a, tc.b); got != tc.want {
 			t.Errorf("compareVersion(%q, %q) = %d, want %d", tc.a, tc.b, got, tc.want)
@@ -352,4 +364,107 @@ func TestBuildWithReusedDigests(t *testing.T) {
 	}
 	runFails(t, "unexpected pushed digest", "build", "-root", "../..", "-plan", file, "-digest", "yookassa="+digestB, "-out", out)
 	runFails(t, "no digest for adapter rollypay", "build", "-root", "../..", "-plan", file, "-out", out)
+}
+
+// The telegram tool: protocol 2 with the fields the panel reads, in tools/.
+func TestTelegramEntry(t *testing.T) {
+	ms, err := manifests("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	digests := map[string]string{}
+	for _, m := range ms {
+		digests[m.ID] = digestA
+	}
+	idx, err := catalog.Build(ms, digests, time.Unix(0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range idx.Adapters {
+		if e.ID != "telegram" {
+			if e.Protocol != 1 || e.Kind != "" || e.Mode != "" || e.Permissions != nil || e.Resources != (catalog.Resources{}) {
+				t.Errorf("%s: %+v", e.ID, e)
+			}
+			continue
+		}
+		if e.Category != "tools" || e.Protocol != 2 || e.Kind != "bot" || e.Mode != "client" || e.Resources.MemMB != 128 ||
+			strings.Join(e.Permissions, ",") != "bot,users:read,users:write,billing:invoice,events,kv" ||
+			e.Image != "ghcr.io/getmikan/tool-telegram" || e.MinPanel != e.Version {
+			t.Errorf("telegram: %+v", e)
+		}
+		return
+	}
+	t.Fatal("no telegram in the index")
+}
+
+func TestOwnInputsOnly(t *testing.T) {
+	root := t.TempDir()
+	for name, tc := range map[string]struct {
+		dockerfile string
+		want       bool
+	}{
+		"the shared code":  {"FROM golang AS build\nCOPY go.mod ./\nCOPY internal/ internal/\nCOPY payments/x/ payments/x/\n", false},
+		"a continued line": {"FROM golang\nCOPY --chown=1:1 \\n  internal/ \\n  /src/\n", false},
+		"the JSON form":    {"FROM golang\nCOPY [\"payments/x/a\", \"/a\"]\n", false},
+		"its own files":    {"FROM golang\ncopy payments/x/main.go ./\nADD payments/x /src\n", true},
+		"another source":   {"FROM golang AS build\nARG VERSION\nRUN git clone https://example.com/a.git .\nADD https://example.com/a.tar /a\nFROM scratch\nCOPY --from=build /out/a /a\n", true},
+		"a way out":        {"FROM golang\nCOPY payments/x/../../internal /i\n", false},
+	} {
+		dir := filepath.Join(root, "payments", "x")
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "Dockerfile"), []byte(tc.dockerfile), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if got, err := ownInputsOnly(root, "payments/x"); err != nil || got != tc.want {
+			t.Errorf("%s: %v, %v; want %v", name, got, err, tc.want)
+		}
+	}
+	if _, err := ownInputsOnly(root, "payments/none"); err == nil {
+		t.Error("a package without a Dockerfile passed")
+	}
+}
+
+// The telegram tool builds mikan's source: the shared code of this repository is no input
+// of its image, so a change there does not ask for a new telegram version (which must be a
+// mikan release).
+func TestReleasePlanSelfContainedTool(t *testing.T) {
+	ms, err := manifests("../..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	digests := map[string]string{}
+	for _, m := range ms {
+		digests[m.ID] = digestA
+	}
+	prev, err := catalog.Build(ms, digests, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	bumped := slices.Clone(ms)
+	for i := range bumped {
+		if bumped[i].Category == "payments" {
+			bumped[i].Version = "9.0.0"
+		}
+	}
+	p, err := makeReleasePlan("../..", bumped, prev, []string{"go.mod", "internal/adapter/server.go"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Build) != 4 || p.Reuse["telegram"] != digestA || len(p.Reuse) != 1 {
+		t.Fatalf("shared code: %+v", p)
+	}
+	if _, err := makeReleasePlan("../..", ms, prev, []string{"tools/telegram/Dockerfile"}); err == nil || !strings.Contains(err.Error(), "telegram changed") {
+		t.Fatalf("the telegram Dockerfile: %v", err)
+	}
+	for i := range ms {
+		if ms[i].ID == "telegram" {
+			ms[i].Version = "0.5.1.0"
+		}
+	}
+	p, err = makeReleasePlan("../..", ms, prev, []string{"tools/telegram/adapter.json"})
+	if err != nil || len(p.Build) != 1 || p.Build[0] != (buildAdapter{ID: "telegram", Version: "0.5.1.0", Dir: "tools/telegram", Image: "ghcr.io/getmikan/tool-telegram"}) {
+		t.Fatalf("a new mikan release: %+v, %v", p, err)
+	}
 }

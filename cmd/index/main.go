@@ -2,7 +2,7 @@
 //
 //	index list
 //	    checks every payments/*/adapter.json and tools/*/adapter.json and prints the
-//	    adapters as a JSON array of {"id", "dir", "image"}
+//	    adapters as a JSON array of {"id", "version", "dir", "image"}
 //	index plan -previous previous/index.json -base v1.0.3 -out plan.json
 //	    selects changed adapters and reuses signed digests for the others
 //	MARKETPLACE_SIGNING_KEY="$(cat key.pem)" index build \
@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -96,9 +97,10 @@ func dir(m catalog.Manifest) string { return m.Category + "/" + m.ID }
 
 // listed is an adapter as list prints it, for the CI's image matrix.
 type listed struct {
-	ID    string `json:"id"`
-	Dir   string `json:"dir"`
-	Image string `json:"image"`
+	ID      string `json:"id"`
+	Version string `json:"version"`
+	Dir     string `json:"dir"`
+	Image   string `json:"image"`
 }
 
 func list(args []string, out io.Writer) error {
@@ -113,7 +115,7 @@ func list(args []string, out io.Writer) error {
 	}
 	l := make([]listed, len(ms))
 	for i, m := range ms {
-		l[i] = listed{ID: m.ID, Dir: dir(m), Image: m.Image}
+		l[i] = listed{ID: m.ID, Version: m.Version, Dir: dir(m), Image: m.Image}
 	}
 	return json.NewEncoder(out).Encode(l)
 }
@@ -176,7 +178,7 @@ func plan(args []string, out io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("git diff from %q: %w", *base, err)
 	}
-	p, err := makeReleasePlan(ms, prev, strings.Split(strings.TrimSuffix(string(paths), "\x00"), "\x00"))
+	p, err := makeReleasePlan(*root, ms, prev, strings.Split(strings.TrimSuffix(string(paths), "\x00"), "\x00"))
 	if err != nil {
 		return err
 	}
@@ -191,7 +193,17 @@ func plan(args []string, out io.Writer) error {
 	return err
 }
 
-func makeReleasePlan(ms []catalog.Manifest, prev catalog.Index, paths []string) (releasePlan, error) {
+func makeReleasePlan(root string, ms []catalog.Manifest, prev catalog.Index, paths []string) (releasePlan, error) {
+	// A package whose image takes nothing from the build context but its own directory (the
+	// telegram tool builds mikan's source at its tag) does not depend on the shared code.
+	selfContained := map[string]bool{}
+	for _, m := range ms {
+		own, err := ownInputsOnly(root, dir(m))
+		if err != nil {
+			return releasePlan{}, err
+		}
+		selfContained[m.ID] = own
+	}
 	changed := map[string]bool{}
 	shared := false
 	for _, path := range paths {
@@ -218,7 +230,7 @@ func makeReleasePlan(ms []catalog.Manifest, prev catalog.Index, paths []string) 
 	p := releasePlan{Build: []buildAdapter{}, Reuse: map[string]string{}}
 	for _, m := range ms {
 		e, existed := old[m.ID]
-		needsBuild := !existed || shared || changed[m.ID] || m.Version != e.Version
+		needsBuild := !existed || shared && !selfContained[m.ID] || changed[m.ID] || m.Version != e.Version
 		if existed && m.Version != e.Version && compareVersion(m.Version, e.Version) <= 0 {
 			return p, fmt.Errorf("adapter %s: version %s must be newer than %s", m.ID, m.Version, e.Version)
 		}
@@ -238,19 +250,67 @@ func makeReleasePlan(ms []catalog.Manifest, prev catalog.Index, paths []string) 
 	return p, nil
 }
 
+// ownInputsOnly tells whether the package's Dockerfile copies from the build context (the
+// repository root) only what lies in the package's own directory. COPY --from takes a stage
+// and ADD of a URL takes no context, so neither counts.
+func ownInputsOnly(root, pkg string) (bool, error) {
+	data, err := os.ReadFile(filepath.Join(root, pkg, "Dockerfile"))
+	if err != nil {
+		return false, err
+	}
+	text := strings.ReplaceAll(strings.ReplaceAll(string(data), "\r\n", "\n"), "\\\n", " ")
+	for _, line := range strings.Split(text, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) < 3 || !strings.EqualFold(fields[0], "COPY") && !strings.EqualFold(fields[0], "ADD") {
+			continue
+		}
+		var args []string
+		stage := false
+		for _, f := range fields[1:] {
+			if strings.HasPrefix(f, "--") {
+				stage = stage || strings.HasPrefix(f, "--from=")
+				continue
+			}
+			args = append(args, f)
+		}
+		if len(args) > 0 && strings.HasPrefix(args[0], "[") {
+			return false, nil // the JSON form: not read here, so taken as shared
+		}
+		if stage || len(args) < 2 {
+			continue
+		}
+		for _, src := range args[:len(args)-1] {
+			if strings.Contains(src, "://") || strings.HasPrefix(src, "git@") {
+				continue
+			}
+			if clean := path.Clean(src); clean != pkg && !strings.HasPrefix(clean, pkg+"/") {
+				return false, nil
+			}
+		}
+	}
+	return true, nil
+}
+
 // isPackage tells a package directory, or adapters/, where the payment adapters were
 // before the packages.
 func isPackage(name string) bool {
 	return name == "adapters" || slices.Contains(catalog.Categories, name)
 }
 
-// compareVersion compares the x.y.z and optional prerelease forms accepted by
-// catalog.Manifest.Check. A release is newer than its prerelease.
+// compareVersion compares the x.y.z[.w] and optional prerelease forms accepted by
+// catalog.Manifest.Check, as the panel does: a missing fourth number is 0, and a release is
+// newer than its prerelease.
 func compareVersion(a, b string) int {
 	coreA, preA, hasPreA := strings.Cut(a, "-")
 	coreB, preB, hasPreB := strings.Cut(b, "-")
 	partsA, partsB := strings.Split(coreA, "."), strings.Split(coreB, ".")
-	for i := range partsA {
+	for len(partsA) < 4 {
+		partsA = append(partsA, "0")
+	}
+	for len(partsB) < 4 {
+		partsB = append(partsB, "0")
+	}
+	for i := range 4 {
 		if c := compareNumeric(partsA[i], partsB[i]); c != 0 {
 			return c
 		}

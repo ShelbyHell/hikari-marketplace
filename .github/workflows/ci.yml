@@ -30,7 +30,7 @@ jobs:
           if [ -n "$unformatted" ]; then echo "not gofmt-ed:"; echo "$unformatted"; exit 1; fi
       - run: go vet ./...
       - run: go test -race -count=1 ./...
-      # Checks every adapter.json and lists the adapters (id, dir, image) for the image job.
+      # Checks every adapter.json and lists the adapters (id, version, dir, image) for the image job.
       - id: list
         run: echo "adapters=$(go run ./cmd/index list)" >> "$GITHUB_OUTPUT"
 
@@ -67,6 +67,9 @@ jobs:
           context: .
           file: ${{ matrix.adapter.dir }}/Dockerfile
           platforms: linux/amd64,linux/arm64
+          # The adapter's version; a tool built from another source (tools/telegram) takes
+          # the release to build from it, the rest ignore it.
+          build-args: VERSION=${{ matrix.adapter.version }}
           push: false
           cache-from: type=gha,scope=${{ matrix.adapter.id }}
           cache-to: type=gha,mode=max,scope=${{ matrix.adapter.id }}
