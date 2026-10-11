@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
-	"sort"
 	"strings"
 	"time"
 )
@@ -128,6 +127,12 @@ func (e Entry) manifest() Manifest {
 		Kind: e.Kind, Mode: e.Mode, Permissions: e.Permissions, Resources: e.Resources, Image: e.Image, MinPanel: e.MinPanel, Homepage: e.Homepage}
 }
 
+// entry is the manifest with the digest of its pushed image.
+func (m Manifest) entry(digest string) Entry {
+	return Entry{ID: m.ID, Category: m.Category, Name: m.Name, Description: m.Description, Version: m.Version, Protocol: m.Protocol,
+		Kind: m.Kind, Mode: m.Mode, Permissions: m.Permissions, Resources: m.Resources, Image: m.Image, Digest: digest, MinPanel: m.MinPanel, Homepage: m.Homepage}
+}
+
 // Index is index.json.
 type Index struct {
 	Version  int       `json:"version"`
@@ -158,7 +163,7 @@ func (m Manifest) Check() error {
 	switch {
 	case !idRe.MatchString(m.ID):
 		return fmt.Errorf("adapter %q: id must be lowercase letters, digits and dashes", m.ID)
-	case m.Category != Payments && m.Category != Tools:
+	case !slices.Contains(Categories, m.Category):
 		return fmt.Errorf("adapter %s: category %q is not %s", m.ID, m.Category, strings.Join(Categories, " or "))
 	case m.Name["ru"] == "" || m.Name["en"] == "" || m.Description["ru"] == "" || m.Description["en"] == "":
 		return fmt.Errorf("adapter %s: name and description need ru and en", m.ID)
@@ -223,14 +228,12 @@ func Build(manifests []Manifest, digests map[string]string, updated time.Time) (
 		if !ok {
 			return idx, fmt.Errorf("no digest for adapter %s", m.ID)
 		}
-		idx.Adapters = append(idx.Adapters, Entry{ID: m.ID, Category: m.Category, Name: m.Name, Description: m.Description, Version: m.Version,
-			Protocol: m.Protocol, Kind: m.Kind, Mode: m.Mode, Permissions: m.Permissions, Resources: m.Resources,
-			Image: m.Image, Digest: d, MinPanel: m.MinPanel, Homepage: m.Homepage})
+		idx.Adapters = append(idx.Adapters, m.entry(d))
 	}
 	if len(digests) != len(manifests) {
 		return idx, errors.New("a digest is given for an adapter that does not exist")
 	}
-	sort.Slice(idx.Adapters, func(i, j int) bool { return idx.Adapters[i].ID < idx.Adapters[j].ID })
+	slices.SortFunc(idx.Adapters, func(a, b Entry) int { return strings.Compare(a.ID, b.ID) })
 	return idx, idx.Check()
 }
 
