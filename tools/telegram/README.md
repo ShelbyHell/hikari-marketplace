@@ -28,6 +28,7 @@ Releasing a new bot: set `version` (and `min_panel` when the bot needs a newer p
 mikan release after its tag is pushed, then merge. Building the image by hand:
 
 ```sh
-docker buildx build --platform linux/amd64 --build-arg VERSION=0.5.1.0-rc.6 \
+docker buildx build --platform linux/amd64 \
+  --build-arg VERSION="$(jq -r .version tools/telegram/adapter.json)" \
   -f tools/telegram/Dockerfile -t tool-telegram:dev --load .
 ```
