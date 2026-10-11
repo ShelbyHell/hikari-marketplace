@@ -95,12 +95,17 @@ func manifests(root string) ([]catalog.Manifest, error) {
 // dir is where an adapter's code and Dockerfile are, from the repository root.
 func dir(m catalog.Manifest) string { return m.Category + "/" + m.ID }
 
-// listed is an adapter as list prints it, for the CI's image matrix.
+// listed is an adapter as list prints it for the CI's image matrix, and as the release plan
+// names the ones to build.
 type listed struct {
 	ID      string `json:"id"`
 	Version string `json:"version"`
 	Dir     string `json:"dir"`
 	Image   string `json:"image"`
+}
+
+func listedOf(m catalog.Manifest) listed {
+	return listed{ID: m.ID, Version: m.Version, Dir: dir(m), Image: m.Image}
 }
 
 func list(args []string, out io.Writer) error {
@@ -115,7 +120,7 @@ func list(args []string, out io.Writer) error {
 	}
 	l := make([]listed, len(ms))
 	for i, m := range ms {
-		l[i] = listed{ID: m.ID, Version: m.Version, Dir: dir(m), Image: m.Image}
+		l[i] = listedOf(m)
 	}
 	return json.NewEncoder(out).Encode(l)
 }
@@ -123,15 +128,8 @@ func list(args []string, out io.Writer) error {
 // digests is the repeatable -digest id=sha256:… flag.
 type digests map[string]string
 
-type buildAdapter struct {
-	ID      string `json:"id"`
-	Version string `json:"version"`
-	Dir     string `json:"dir"`
-	Image   string `json:"image"`
-}
-
 type releasePlan struct {
-	Build []buildAdapter    `json:"build"`
+	Build []listed          `json:"build"`
 	Reuse map[string]string `json:"reuse"`
 }
 
@@ -150,19 +148,7 @@ func plan(args []string, out io.Writer) error {
 	if *previous == "" || *base == "" {
 		return errors.New("-previous and -base are required")
 	}
-	data, err := os.ReadFile(*previous)
-	if err != nil {
-		return err
-	}
-	sig, err := os.ReadFile(*previous + ".sig")
-	if err != nil {
-		return err
-	}
-	pub, err := catalog.Key(*pubB64)
-	if err != nil {
-		return err
-	}
-	prev, err := catalog.Verify(data, string(sig), pub)
+	prev, err := readCatalog(*previous, *pubB64)
 	if err != nil {
 		return fmt.Errorf("previous catalog: %w", err)
 	}
@@ -206,19 +192,19 @@ func makeReleasePlan(root string, ms []catalog.Manifest, prev catalog.Index, pat
 	}
 	changed := map[string]bool{}
 	shared := false
-	for _, path := range paths {
-		if path == "" {
+	for _, file := range paths {
+		if file == "" {
 			continue
 		}
-		parts := strings.Split(filepath.ToSlash(path), "/")
+		parts := strings.Split(filepath.ToSlash(file), "/")
 		switch {
-		case strings.HasSuffix(path, ".md") || strings.HasSuffix(path, "_test.go"):
+		case strings.HasSuffix(file, ".md") || strings.HasSuffix(file, "_test.go"):
 			// Documentation and tests are not inputs to the final adapter binary.
 		case len(parts) > 1 && isPackage(parts[0]):
 			changed[parts[1]] = true
-		case path == "go.mod" || path == "go.sum" || strings.HasPrefix(path, "internal/adapter/"):
+		case file == "go.mod" || file == "go.sum" || strings.HasPrefix(file, "internal/adapter/"):
 			shared = true
-		case strings.HasPrefix(path, "internal/catalog/") || strings.HasPrefix(path, ".github/") || strings.HasPrefix(path, "cmd/index/") || path == "LICENSE" || path == ".gitignore":
+		case strings.HasPrefix(file, "internal/catalog/") || strings.HasPrefix(file, ".github/") || strings.HasPrefix(file, "cmd/index/") || file == "LICENSE" || file == ".gitignore":
 		default:
 			shared = true // unknown image input: rebuild conservatively
 		}
@@ -227,7 +213,7 @@ func makeReleasePlan(root string, ms []catalog.Manifest, prev catalog.Index, pat
 	for _, e := range prev.Adapters {
 		old[e.ID] = e
 	}
-	p := releasePlan{Build: []buildAdapter{}, Reuse: map[string]string{}}
+	p := releasePlan{Build: []listed{}, Reuse: map[string]string{}}
 	for _, m := range ms {
 		e, existed := old[m.ID]
 		needsBuild := !existed || shared && !selfContained[m.ID] || changed[m.ID] || m.Version != e.Version
@@ -238,7 +224,7 @@ func makeReleasePlan(root string, ms []catalog.Manifest, prev catalog.Index, pat
 			return p, fmt.Errorf("adapter %s changed but version is still %s; bump its version", m.ID, m.Version)
 		}
 		if needsBuild {
-			p.Build = append(p.Build, buildAdapter{ID: m.ID, Version: m.Version, Dir: dir(m), Image: m.Image})
+			p.Build = append(p.Build, listedOf(m))
 		} else {
 			p.Reuse[m.ID] = e.Digest
 		}
@@ -390,6 +376,49 @@ func (d digests) Set(v string) error {
 	return nil
 }
 
+// reusePlanned checks plan.json against the manifests and adds the digests it reuses to ds:
+// every adapter is either built (its digest is pushed, so given) or reused, never both, at
+// the version and place the manifest says.
+func reusePlanned(planFile string, ms []catalog.Manifest, ds digests) error {
+	data, err := os.ReadFile(planFile)
+	if err != nil {
+		return err
+	}
+	var p releasePlan
+	if err := json.Unmarshal(data, &p); err != nil {
+		return fmt.Errorf("plan: %w", err)
+	}
+	building := map[string]listed{}
+	for _, b := range p.Build {
+		if _, dup := building[b.ID]; dup {
+			return fmt.Errorf("plan: duplicate adapter %s", b.ID)
+		}
+		building[b.ID] = b
+	}
+	for id, digest := range p.Reuse {
+		if _, dup := building[id]; dup {
+			return fmt.Errorf("plan: duplicate adapter %s", id)
+		}
+		if _, present := ds[id]; present {
+			return fmt.Errorf("plan: unexpected pushed digest for reused adapter %s", id)
+		}
+		ds[id] = digest
+	}
+	for _, m := range ms {
+		b, built := building[m.ID]
+		if _, reused := p.Reuse[m.ID]; !built && !reused {
+			return fmt.Errorf("plan: missing adapter %s", m.ID)
+		}
+		if built && b != listedOf(m) {
+			return fmt.Errorf("plan: version or place mismatch for %s", m.ID)
+		}
+	}
+	if len(building)+len(p.Reuse) != len(ms) {
+		return errors.New("plan: unknown adapter")
+	}
+	return nil
+}
+
 func build(args []string, out io.Writer) error {
 	fs := flag.NewFlagSet("build", flag.ContinueOnError)
 	root := fs.String("root", ".", "the repository root, where the packages are")
@@ -409,43 +438,8 @@ func build(args []string, out io.Writer) error {
 		return err
 	}
 	if *planFile != "" {
-		data, err := os.ReadFile(*planFile)
-		if err != nil {
+		if err := reusePlanned(*planFile, ms, ds); err != nil {
 			return err
-		}
-		var p releasePlan
-		if err := json.Unmarshal(data, &p); err != nil {
-			return fmt.Errorf("plan: %w", err)
-		}
-		allowed := map[string]bool{}
-		for _, b := range p.Build {
-			if allowed[b.ID] {
-				return fmt.Errorf("plan: duplicate adapter %s", b.ID)
-			}
-			allowed[b.ID] = true
-		}
-		for id, digest := range p.Reuse {
-			if allowed[id] {
-				return fmt.Errorf("plan: duplicate adapter %s", id)
-			}
-			allowed[id] = true
-			if _, present := ds[id]; present {
-				return fmt.Errorf("plan: unexpected pushed digest for reused adapter %s", id)
-			}
-			ds[id] = digest
-		}
-		for _, m := range ms {
-			if !allowed[m.ID] {
-				return fmt.Errorf("plan: missing adapter %s", m.ID)
-			}
-			for _, b := range p.Build {
-				if b.ID == m.ID && (b.Version != m.Version || b.Dir != dir(m) || b.Image != m.Image) {
-					return fmt.Errorf("plan: version or place mismatch for %s", m.ID)
-				}
-			}
-		}
-		if len(allowed) != len(ms) {
-			return errors.New("plan: unknown adapter")
 		}
 	}
 	idx, err := catalog.Build(ms, ds, time.Now())
@@ -474,6 +468,24 @@ func build(args []string, out io.Writer) error {
 	return nil
 }
 
+// readCatalog reads index.json and index.json.sig next to it, and verifies them with the
+// public key (raw Ed25519 in base64).
+func readCatalog(file, pubB64 string) (catalog.Index, error) {
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return catalog.Index{}, err
+	}
+	sig, err := os.ReadFile(file + ".sig")
+	if err != nil {
+		return catalog.Index{}, err
+	}
+	pub, err := catalog.Key(pubB64)
+	if err != nil {
+		return catalog.Index{}, err
+	}
+	return catalog.Verify(data, string(sig), pub)
+}
+
 func verify(args []string, out io.Writer) error {
 	fs := flag.NewFlagSet("verify", flag.ContinueOnError)
 	pubB64 := fs.String("key", catalog.PublicKey, "public key, raw Ed25519 in base64")
@@ -483,19 +495,7 @@ func verify(args []string, out io.Writer) error {
 	if fs.NArg() != 1 {
 		return errors.New("usage: index verify [-key base64] dist/index.json")
 	}
-	data, err := os.ReadFile(fs.Arg(0))
-	if err != nil {
-		return err
-	}
-	sig, err := os.ReadFile(fs.Arg(0) + ".sig")
-	if err != nil {
-		return err
-	}
-	pub, err := catalog.Key(*pubB64)
-	if err != nil {
-		return err
-	}
-	idx, err := catalog.Verify(data, string(sig), pub)
+	idx, err := readCatalog(fs.Arg(0), *pubB64)
 	if err != nil {
 		return err
 	}

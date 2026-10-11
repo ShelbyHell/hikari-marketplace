@@ -1,9 +1,10 @@
-# The addon API (draft for discussion)
+# The addon API (the original draft)
 
-> Superseded: protocol 2 as built is [PROTOCOL-v2.md](PROTOCOL-v2.md). This draft is kept
-> for its history and its node addons part.
+> Superseded: protocol 2 as built is [PROTOCOL-v2.md](PROTOCOL-v2.md). Where the two differ
+> (scopes, `/v2/configure`, the addon key, the events outbox), PROTOCOL-v2.md is right. This
+> draft is kept for its history and its node addons part.
 
-Status: **a proposal**, nothing here is built yet. It decides how tools (`tools/`) talk to
+Status: **the proposal protocol 2 was built from.** It decided how tools (`tools/`) talk to
 the panel, so that the Telegram bot and its Mini App can leave the panel, and admins can
 write addons of their own. Payment adapters keep [PROTOCOL.md](PROTOCOL.md) as it is.
 

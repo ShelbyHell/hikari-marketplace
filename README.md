@@ -103,7 +103,8 @@ then:
    tool, which builds mikan's source). Versions are `x.y.z`, optionally with a fourth
    number and a prerelease, as mikan's (`0.5.1.0-rc.6`).
 3. Builds and pushes only changed images for amd64 and arm64, each tagged with its own
-   adapter version (also passed to the build as `VERSION`). Unchanged image digests come from the verified previous catalog.
+   adapter version (also passed to the build as `VERSION`). Unchanged image digests come
+   from the verified previous catalog.
 4. Signs a new complete catalog and publishes it under an automatic `catalog-<run>-<attempt>`
    tag. The panel reads `releases/latest/download/index.json`.
 
