@@ -4,6 +4,7 @@ package main
 import (
 	_ "embed"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/getmikan/marketplace/internal/adapter"
@@ -16,7 +17,8 @@ var manifestJSON []byte
 func main() {
 	m, err := catalog.ParseManifest(manifestJSON)
 	if err == nil {
-		err = adapter.Run(&cardlink{api: "https://cardlink.link/api/v1", hc: adapter.HTTPClient(), manifest: m})
+		log := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+		err = adapter.Run(&cardlink{api: "https://cardlink.link/api/v1", hc: adapter.HTTPClient(), manifest: m, log: log})
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "adapter-cardlink:", err)

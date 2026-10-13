@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -27,10 +28,15 @@ type cardlink struct {
 	api      string
 	hc       *http.Client
 	manifest catalog.Manifest
+	log      *slog.Logger
 }
 
-// codeInvalid is Cardlink's HTTP 422, a request it found invalid.
-const codeInvalid = "cardlink_http_422"
+const (
+	// codeInvalid is Cardlink's HTTP 422, a request it found invalid.
+	codeInvalid = "cardlink_http_422"
+	// billTTL is how long a bill can be paid: as long as the panel keeps an unpaid invoice.
+	billTTL = 24 * 60 * 60
+)
 
 // returnKeys are where the payer goes after paying or failing to: all three get return_url.
 var returnKeys = []string{"success_url", "fail_url", "return_url"}
@@ -140,9 +146,9 @@ func (p *cardlink) Check(ctx context.Context, s adapter.Settings) error {
 	return p.call(ctx, s, http.MethodGet, "/merchant/balance", nil, nil)
 }
 
-// CreateInvoice opens a one-time bill. Cardlink has no idempotency keys and does not keep
-// order ids unique, so a retried request can open a second bill; only the one the panel
-// stored is ever checked or shown to the payer.
+// CreateInvoice opens a one-time bill. Cardlink has no idempotency keys, and its lookup by
+// order cannot be relied on (README), so a retried request can open a second bill; only the
+// one the panel stored is ever checked or shown to the payer.
 func (p *cardlink) CreateInvoice(ctx context.Context, r adapter.InvoiceRequest) (adapter.Invoice, error) {
 	form := url.Values{
 		"amount":      {adapter.FormatMinor(r.Amount)},
@@ -150,6 +156,7 @@ func (p *cardlink) CreateInvoice(ctx context.Context, r adapter.InvoiceRequest) 
 		"shop_id":     {r.Settings.String("shop_id")},
 		"order_id":    {r.IdempotencyKey},
 		"type":        {"normal"},
+		"ttl":         {strconv.Itoa(billTTL)},
 	}
 	if desc := adapter.Truncate(strings.TrimSpace(r.Description), 255); desc != "" {
 		form.Set("description", desc)
@@ -175,11 +182,16 @@ func (p *cardlink) CreateInvoice(ctx context.Context, r adapter.InvoiceRequest) 
 	if r.ReturnURL != "" && errors.As(err, &e) && e.Code == codeInvalid {
 		// Cardlink takes these URLs only on the domain the shop was registered with. A shop
 		// on another domain gets the bill without them: the payer stays on Cardlink's page,
-		// and the panel still hears of the payment from the postback.
+		// and the panel still hears of the payment from the postback. Both attempts are
+		// logged, so a 422 for another reason (the amount, the currency) stays visible.
+		p.log.Warn("cardlink refused the bill with the return URLs as invalid, trying without them", "payment_id", r.PaymentID)
 		for _, k := range returnKeys {
 			form.Del(k)
 		}
-		err = p.call(ctx, r.Settings, http.MethodPost, "/bill/create", form, &res)
+		if err = p.call(ctx, r.Settings, http.MethodPost, "/bill/create", form, &res); errors.As(err, &e) && e.Code == codeInvalid {
+			p.log.Warn("cardlink refused the bill without the return URLs as well", "payment_id", r.PaymentID)
+			err = adapter.Refused(codeInvalid, "Cardlink refused the bill as invalid, with the return URLs and without them (HTTP 422)")
+		}
 	}
 	if err != nil {
 		return adapter.Invoice{}, err
@@ -242,18 +254,29 @@ func parseAmount(s string) (int64, bool) {
 	return adapter.ParseMinor(s)
 }
 
-// Webhook checks the postback's SignatureValue, strtoupper(md5(OutSum:InvId:api_token)),
-// then names the bill (TrsId) of a SUCCESS or OVERPAID one; other statuses are ignored.
+// signedFields are what each of Cardlink's postbacks signs, followed by the API token: a
+// payment, a payout or a P2P deal, a refund, a chargeback. The first one is the payment.
+var signedFields = [][]string{
+	{"OutSum", "InvId"},
+	{"Amount", "TrsId"},
+	{"Amount", "Currency", "BillId", "PaymentId", "Id"},
+	{"BillId", "PaymentId", "Id"},
+}
+
+// Webhook checks the postback's SignatureValue, strtoupper(md5(<fields>:api_token)), then
+// names the bill (TrsId) of a SUCCESS or OVERPAID payment. A postback signed as anything
+// else (a P2P deal shares the Result URL) or with another payment status is ignored; only a
+// form no formula signs is bad_request.
 func (p *cardlink) Webhook(_ context.Context, r adapter.WebhookRequest) (string, error) {
 	form, err := url.ParseQuery(string(r.Body))
-	if err != nil || form.Get("OutSum") == "" || form.Get("InvId") == "" || form.Get("Status") == "" {
+	if err != nil {
 		return "", adapter.BadRequest("not a Cardlink postback")
 	}
-	sum := md5.Sum([]byte(form.Get("OutSum") + ":" + form.Get("InvId") + ":" + r.Settings.String("api_token")))
-	if !same(strings.ToUpper(form.Get("SignatureValue")), strings.ToUpper(hex.EncodeToString(sum[:]))) {
+	kind := signedAs(form, r.Settings.String("api_token"))
+	if kind < 0 {
 		return "", adapter.BadRequest("the postback signature does not match the API token")
 	}
-	if st := form.Get("Status"); st != "SUCCESS" && st != "OVERPAID" {
+	if st := form.Get("Status"); kind != 0 || (st != "SUCCESS" && st != "OVERPAID") {
 		return "", nil
 	}
 	id := form.Get("TrsId")
@@ -261,6 +284,23 @@ func (p *cardlink) Webhook(_ context.Context, r adapter.WebhookRequest) (string,
 		return "", adapter.BadRequest("a paid postback without a bill")
 	}
 	return id, nil
+}
+
+// signedAs is the index in signedFields of the formula the form's signature matches, -1 for
+// none.
+func signedAs(form url.Values, token string) int {
+	got := strings.ToUpper(form.Get("SignatureValue"))
+	for i, fields := range signedFields {
+		parts := make([]string, 0, len(fields)+1)
+		for _, f := range fields {
+			parts = append(parts, form.Get(f))
+		}
+		sum := md5.Sum([]byte(strings.Join(append(parts, token), ":")))
+		if same(got, strings.ToUpper(hex.EncodeToString(sum[:]))) {
+			return i
+		}
+	}
+	return -1
 }
 
 // same compares in constant time (hashes first, so the length does not leak); an empty
