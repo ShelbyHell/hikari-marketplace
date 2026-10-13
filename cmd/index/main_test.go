@@ -74,8 +74,8 @@ func realIndex(t *testing.T) ([]catalog.Manifest, catalog.Index) {
 }
 
 // digestFlags is a -digest for every real adapter: digestA for yookassa, digestB for the rest.
-var digestFlags = []string{"-digest", "yookassa=" + digestA, "-digest", "cryptobot=" + digestB, "-digest", "platega=" + digestB,
-	"-digest", "rollypay=" + digestB, "-digest", "telegram=" + digestB}
+var digestFlags = []string{"-digest", "yookassa=" + digestA, "-digest", "cardlink=" + digestB, "-digest", "cryptobot=" + digestB,
+	"-digest", "platega=" + digestB, "-digest", "rollypay=" + digestB, "-digest", "telegram=" + digestB}
 
 // version is the version the real adapters are at.
 func version(t *testing.T) string {
@@ -108,7 +108,7 @@ func TestListRealAdapters(t *testing.T) {
 			t.Errorf("%s: %+v", l.ID, l)
 		}
 	}
-	if strings.Join(ids, ",") != "cryptobot,platega,rollypay,yookassa,telegram" {
+	if strings.Join(ids, ",") != "cardlink,cryptobot,platega,rollypay,yookassa,telegram" {
 		t.Fatalf("index list: %v", ids)
 	}
 }
@@ -134,8 +134,8 @@ func TestSignVerifyRoundTrip(t *testing.T) {
 		t.Fatal("the signature does not verify over the file's bytes")
 	}
 	idx, err := catalog.Verify(data, string(sig), key)
-	if err != nil || idx.Version != 1 || len(idx.Adapters) != 5 || idx.Adapters[4].Digest != digestA || idx.Adapters[4].MinPanel != "0.4.3" ||
-		idx.Adapters[4].Category != "payments" || !bytes.Contains(data, []byte(`"category": "payments"`)) {
+	if err != nil || idx.Version != 1 || len(idx.Adapters) != 6 || idx.Adapters[5].Digest != digestA || idx.Adapters[5].MinPanel != "0.4.3" ||
+		idx.Adapters[5].Category != "payments" || !bytes.Contains(data, []byte(`"category": "payments"`)) {
 		t.Fatalf("index: %v %+v", err, idx)
 	}
 
@@ -264,7 +264,7 @@ func TestReleasePlanOnlyChangedAdapter(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(p.Build) != 1 || p.Build[0].ID != "rollypay" || p.Build[0].Version != "9.0.0" || p.Build[0].Dir != "payments/rollypay" ||
-		p.Build[0].Image != "ghcr.io/getmikan/adapter-rollypay" || len(p.Reuse) != 4 {
+		p.Build[0].Image != "ghcr.io/getmikan/adapter-rollypay" || len(p.Reuse) != 5 {
 		t.Fatalf("plan: %+v", p)
 	}
 	for id, digest := range p.Reuse {
@@ -274,7 +274,7 @@ func TestReleasePlanOnlyChangedAdapter(t *testing.T) {
 	}
 	for i := range ms {
 		if ms[i].ID == "rollypay" {
-			ms[i].Version = prev.Adapters[2].Version
+			ms[i].Version = prev.Adapters[3].Version
 		}
 	}
 	if _, err := makeReleasePlan("../..", ms, prev, []string{"payments/rollypay/rollypay.go"}); err == nil || !strings.Contains(err.Error(), "bump its version") {
@@ -441,7 +441,7 @@ func TestReleasePlanSelfContainedTool(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(p.Build) != 4 || p.Reuse["telegram"] != digestA || len(p.Reuse) != 1 {
+	if len(p.Build) != 5 || p.Reuse["telegram"] != digestA || len(p.Reuse) != 1 {
 		t.Fatalf("shared code: %+v", p)
 	}
 	if _, err := makeReleasePlan("../..", ms, prev, []string{"tools/telegram/Dockerfile"}); err == nil || !strings.Contains(err.Error(), "telegram changed") {

@@ -107,8 +107,8 @@ panel calls it before saving changed settings.
   or, if the provider has none, look for the invoice the key already created (the
   CryptoBot adapter stores the key in the invoice payload and looks it up first).
 - `webhook_url` is where the panel receives the provider's notifications. Providers that
-  take a notification URL per invoice should send it; for the others (YooKassa, CryptoBot, Platega, RollyPay)
-  the admin enters it in the provider's dashboard.
+  take a notification URL per invoice should send it; for the others (YooKassa, CryptoBot,
+  Platega, RollyPay, Cardlink) the admin enters it in the provider's dashboard.
 - An adapter may require `return_url` if its provider does (`bad_request` without it).
 
 ### `POST /v1/status`
