@@ -105,10 +105,13 @@ panel calls it before saving changed settings.
 - `idempotency_key` is 1–64 printable ASCII characters without spaces. **The same key must
   not create a second invoice at the provider**: pass it as the provider's idempotency key,
   or, if the provider has none, look for the invoice the key already created (the
-  CryptoBot adapter stores the key in the invoice payload and looks it up first).
+  CryptoBot adapter stores the key in the invoice payload and looks it up first). Where
+  neither can be done (Platega has no lookup by order, Cardlink's cannot be relied on: see
+  their READMEs), a retried request may open a second invoice; the panel only ever checks
+  and shows the one it stored, and the other expires unpaid.
 - `webhook_url` is where the panel receives the provider's notifications. Providers that
-  take a notification URL per invoice should send it; for the others (YooKassa, CryptoBot, Platega, RollyPay)
-  the admin enters it in the provider's dashboard.
+  take a notification URL per invoice should send it; for the others (YooKassa, CryptoBot,
+  Platega, RollyPay, Cardlink) the admin enters it in the provider's dashboard.
 - An adapter may require `return_url` if its provider does (`bad_request` without it).
 
 ### `POST /v1/status`

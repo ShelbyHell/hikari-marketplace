@@ -24,6 +24,7 @@ Each needs panel 0.5.1.0 or later (the bot: the release it is built from).
 | id | Provider | Currencies | Capabilities |
 |---|---|---|---|
 | [`yookassa`](payments/yookassa) | ЮKassa: bank cards and SBP | RUB | webhook, refund |
+| [`cardlink`](payments/cardlink) | Cardlink: bank cards and SBP | RUB, USD, EUR | webhook |
 | [`cryptobot`](payments/cryptobot) | @CryptoBot (Crypto Pay): cryptocurrency, priced in fiat | RUB, USD, EUR | webhook |
 | [`platega`](payments/platega) | Platega: SBP, cards, Sberpay, crypto | RUB | webhook |
 | [`rollypay`](payments/rollypay) | RollyPay: SBP, cards, crypto | RUB | webhook |
