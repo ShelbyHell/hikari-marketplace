@@ -134,6 +134,11 @@ curl -fsSLO https://github.com/getmikan/marketplace/releases/latest/download/ind
 go run ./cmd/index verify index.json
 ```
 
+## ⛔ Forks and third-party addons
+
+> [!CAUTION]
+> Official addons are only the ones in this repository's signed catalog, with images under `ghcr.io/getmikan/`. **The mikan project considers every fork of an addon, every third-party catalog and every "unofficial" addon potentially unsafe.** They are not ours: we do not review or support them and are not responsible for how they work. The panel marks them as not verified by mikan.
+
 ## License
 
 [GPL-3.0-only](LICENSE), as the panel.
