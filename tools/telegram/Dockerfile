@@ -2,7 +2,7 @@
 # The official Telegram bot is mikan's own code: cmd/mikan-telegram of the mikan release
 # this tool's version names. Build from the repository root (CI passes VERSION from
 # adapter.json; the image takes nothing from this repository):
-#   docker buildx build --platform linux/amd64,linux/arm64 --build-arg VERSION=0.5.1.0-rc.6 \
+#   docker buildx build --platform linux/amd64,linux/arm64 --build-arg VERSION=0.5.1.0-rc.11 \
 #     -f tools/telegram/Dockerfile .
 # Go cross-compiles on the build platform; only the final stage is the target's.
 FROM --platform=$BUILDPLATFORM golang:1.27 AS build
