@@ -290,6 +290,10 @@ func TestReleasePlanOnlyChangedAdapter(t *testing.T) {
 	if p, err := makeReleasePlan("../..", ms, prev, []string{"payments/rollypay/README.md", "payments/rollypay/rollypay_test.go"}); err != nil || len(p.Build) != 0 {
 		t.Fatalf("documentation and tests: %+v, %v", p, err)
 	}
+	// The community registry's indexer is in no image.
+	if p, err := makeReleasePlan("../..", ms, prev, []string{"cmd/community/main.go", "internal/community/sync.go"}); err != nil || len(p.Build) != 0 {
+		t.Fatalf("the community indexer: %+v, %v", p, err)
+	}
 	for i := range ms {
 		if ms[i].ID == "rollypay" {
 			ms[i].Version = "1.0.2"
