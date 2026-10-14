@@ -128,8 +128,14 @@ func TestGitHubWrites(t *testing.T) {
 	if f.trees[0]["base_tree"] != "tree0" || len(tree) != 2 {
 		t.Fatalf("tree %+v", f.trees[0])
 	}
-	if del := tree[1].(map[string]any); del["path"] != "addons/a/y.json" || del["sha"] != nil {
+	if del := tree[1].(map[string]any); del["path"] != "addons/a/y.json" || del["sha"] != nil || del["content"] != nil {
 		t.Fatalf("a deletion is a null sha: %+v", del)
+	}
+	if _, hasSHA := tree[0].(map[string]any)["sha"]; hasSHA {
+		t.Fatalf("a file carries its content and no sha: %+v", tree[0])
+	}
+	if _, isNull := tree[1].(map[string]any)["sha"]; !isNull {
+		t.Fatal("a deletion names its sha as null")
 	}
 	// A branch left from a closed pull request is reset.
 	if err := g.OpenReview(ctx, "base0", Review{Branch: "community/repo-7", Title: "community: add", Body: "b", Files: Change{"addons/a/x.json": []byte("{}")}}); err != nil {
