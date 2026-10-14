@@ -241,19 +241,14 @@ func (g *GitHub) commit(ctx context.Context, parent, message string, files Chang
 	if err := g.call(ctx, http.MethodGet, fmt.Sprintf("/repos/%s/git/commits/%s", g.Registry, parent), nil, &c); err != nil {
 		return "", err
 	}
-	type item struct {
-		Path    string  `json:"path"`
-		Mode    string  `json:"mode"`
-		Type    string  `json:"type"`
-		Content *string `json:"content,omitempty"`
-		SHA     *string `json:"sha"`
-	}
-	tree := []item{}
+	// A file is its content; a deletion is a null sha. GitHub refuses an item with both.
+	tree := []map[string]any{}
 	for _, path := range sortedPaths(files) {
-		it := item{Path: path, Mode: "100644", Type: "blob"}
+		it := map[string]any{"path": path, "mode": "100644", "type": "blob"}
 		if data := files[path]; data != nil {
-			s := string(data)
-			it.Content = &s
+			it["content"] = string(data)
+		} else {
+			it["sha"] = nil
 		}
 		tree = append(tree, it)
 	}
