@@ -153,7 +153,7 @@ the real token and the polling; the bot's id comes from `getMe`.
   `editMessageMedia`, `deleteMessage`, `deleteMessages`, `sendPhoto`, `sendDocument`,
   `sendMediaGroup`, `sendChatAction`, `copyMessage`, `forwardMessage`, `sendSticker`,
   `sendAnimation`, `sendVideo`, `sendAudio`, `sendVoice`, `sendLocation`, `pinChatMessage`,
-  `unpinChatMessage`. `X-hikari-Priority: notice | bulk` picks the outbox lane.
+  `unpinChatMessage`. `X-Mikan-Priority: notice | bulk` picks the outbox lane.
 - Everything else, `setWebhook`, `sendInvoice`, `createInvoiceLink`, `answerPreCheckoutQuery`,
   `refundStarPayment`, `logOut` and `close` among them, is refused with 403 `not allowed for
   addons`.
