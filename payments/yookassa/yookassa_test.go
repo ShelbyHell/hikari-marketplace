@@ -212,7 +212,7 @@ func TestCreateInvoice(t *testing.T) {
 	}
 	body, _ := json.Marshal(e.yk.created[0])
 	for _, want := range []string{`"amount":{"currency":"RUB","value":"199.00"}`, `"capture":true`,
-		`"confirmation":{"return_url":"https://panel.example.com/tg","type":"redirect"}`, `"hikari_payment_id":"4217"`} {
+		`"confirmation":{"return_url":"https://panel.example.com/tg","type":"redirect"}`, `"mikan_payment_id":"4217"`} {
 		if !strings.Contains(string(body), want) {
 			t.Errorf("payment body %s: no %s", body, want)
 		}

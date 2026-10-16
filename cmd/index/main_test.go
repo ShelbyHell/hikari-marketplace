@@ -453,11 +453,11 @@ func TestReleasePlanSelfContainedTool(t *testing.T) {
 	}
 	for i := range ms {
 		if ms[i].ID == "telegram" {
-			ms[i].Version = "0.5.1.0"
+			ms[i].Version = "0.6.0.0"
 		}
 	}
 	p, err = makeReleasePlan("../..", ms, prev, []string{"tools/telegram/adapter.json"})
-	if err != nil || len(p.Build) != 1 || p.Build[0] != (listed{ID: "telegram", Version: "0.5.1.0", Dir: "tools/telegram", Image: "ghcr.io/shelbyhell/tool-telegram"}) {
+	if err != nil || len(p.Build) != 1 || p.Build[0] != (listed{ID: "telegram", Version: "0.6.0.0", Dir: "tools/telegram", Image: "ghcr.io/shelbyhell/tool-telegram"}) {
 		t.Fatalf("a new Hikari release: %+v, %v", p, err)
 	}
 }

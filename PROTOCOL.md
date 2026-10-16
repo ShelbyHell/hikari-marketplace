@@ -1,6 +1,6 @@
 # Hikari payment adapter protocol, version 1
 
-A payment adapter connects the [Hikari](https://github.com/Miroshka000/Hikari) panel to one
+A payment adapter connects the [Hikari](https://github.com/ShelbyHell/Hikari) panel to one
 payment provider. It is a small stateless HTTP service in a container on the same host as
 the panel. It knows the provider's API and nothing about users or tariffs.
 
@@ -183,7 +183,7 @@ Without the `refund` capability the endpoint answers `not_found`.
 ## Catalog
 
 The panel offers the adapters listed in `index.json`, published with every catalog release
-of [getmikan/marketplace](https://github.com/ShelbyHell/hikari-marketplace):
+of [ShelbyHell/marketplace](https://github.com/ShelbyHell/hikari-marketplace):
 
 - `https://github.com/ShelbyHell/hikari-marketplace/releases/latest/download/index.json`
 - `https://github.com/ShelbyHell/hikari-marketplace/releases/latest/download/index.json.sig`

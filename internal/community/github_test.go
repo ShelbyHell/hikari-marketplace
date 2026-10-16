@@ -56,30 +56,30 @@ func (f *fakeGitHub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{"id":"hello"}`))
 	case p == "/repos/None/x/releases/latest":
 		http.NotFound(w, r)
-	case p == "/repos/getmikan/reg/pulls" && r.Method == http.MethodGet:
+	case p == "/repos/ShelbyHell/reg/pulls" && r.Method == http.MethodGet:
 		reply([]any{map[string]any{"head": map[string]any{"ref": "community/repo-9"}}})
-	case strings.HasPrefix(p, "/repos/getmikan/reg/git/commits/"):
+	case strings.HasPrefix(p, "/repos/ShelbyHell/reg/git/commits/"):
 		reply(map[string]any{"tree": map[string]any{"sha": "tree0"}})
-	case p == "/repos/getmikan/reg/git/trees":
+	case p == "/repos/ShelbyHell/reg/git/trees":
 		f.trees = append(f.trees, in)
 		reply(map[string]any{"sha": "tree1"})
-	case p == "/repos/getmikan/reg/git/commits":
+	case p == "/repos/ShelbyHell/reg/git/commits":
 		reply(map[string]any{"sha": "commit1"})
-	case p == "/repos/getmikan/reg/git/refs":
+	case p == "/repos/ShelbyHell/reg/git/refs":
 		ref := in["ref"].(string)
 		if _, ok := f.refs[ref]; ok {
 			http.Error(w, "exists", http.StatusUnprocessableEntity)
 			return
 		}
 		f.refs[ref] = in["sha"].(string)
-	case strings.HasPrefix(p, "/repos/getmikan/reg/git/refs/heads/"):
-		ref := "refs/heads/" + strings.TrimPrefix(p, "/repos/getmikan/reg/git/refs/heads/")
+	case strings.HasPrefix(p, "/repos/ShelbyHell/reg/git/refs/heads/"):
+		ref := "refs/heads/" + strings.TrimPrefix(p, "/repos/ShelbyHell/reg/git/refs/heads/")
 		if ref == "refs/heads/main" && in["force"] == true {
 			http.Error(w, "main is never forced", http.StatusBadRequest)
 			return
 		}
 		f.refs[ref] = in["sha"].(string)
-	case p == "/repos/getmikan/reg/pulls" && r.Method == http.MethodPost:
+	case p == "/repos/ShelbyHell/reg/pulls" && r.Method == http.MethodPost:
 		f.prs = append(f.prs, in)
 	default:
 		http.NotFound(w, r)
@@ -90,7 +90,7 @@ func testGitHub(t *testing.T) (*GitHub, *fakeGitHub) {
 	f := &fakeGitHub{refs: map[string]string{"refs/heads/community/repo-7": "old"}}
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
-	g := NewGitHub("tok", "getmikan/reg")
+	g := NewGitHub("tok", "ShelbyHell/reg")
 	g.API = srv.URL
 	return g, f
 }

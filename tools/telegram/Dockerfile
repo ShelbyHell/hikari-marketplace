@@ -1,18 +1,18 @@
 # syntax=docker/dockerfile:1.7
-# The official Telegram bot is mikan's own code: cmd/mikan-telegram of the mikan release
+# The official Telegram bot is hikari's own code: cmd/mikan-telegram of the hikari release
 # this tool's version names. Build from the repository root (CI passes VERSION from
 # adapter.json; the image takes nothing from this repository):
 #   docker buildx build --platform linux/amd64,linux/arm64 --build-arg VERSION=0.5.1.0-rc.11 \
 #     -f tools/telegram/Dockerfile .
 # Go cross-compiles on the build platform; only the final stage is the target's.
 FROM --platform=$BUILDPLATFORM golang:1.27 AS build
-# The mikan release to build, without the "v": the tool's version in adapter.json, so one
+# The hikari release to build, without the "v": the tool's version in adapter.json, so one
 # version is always the same source.
 ARG VERSION
-RUN test -n "$VERSION" || { echo "VERSION (the mikan release) is required"; exit 1; }
+RUN test -n "$VERSION" || { echo "VERSION (the hikari release) is required"; exit 1; }
 WORKDIR /src
-RUN git clone --depth 1 --branch "v${VERSION}" https://github.com/Miroshka000/mikan.git . && \
-    git log -1 --format="mikan v${VERSION} at %H"
+RUN git clone --depth 1 --branch "v${VERSION}" https://github.com/ShelbyHell/hikari.git . && \
+    git log -1 --format="hikari v${VERSION} at %H"
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
 # Filled in by BuildKit for each platform. A default here would win over it and put
 # amd64 binaries into the arm64 image.

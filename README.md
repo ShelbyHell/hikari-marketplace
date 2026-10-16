@@ -1,6 +1,6 @@
 # Hikari marketplace
 
-Addons for the [Hikari](https://github.com/Miroshka000/Hikari) VPN panel, and the signed
+Addons for the [Hikari](https://github.com/ShelbyHell/Hikari) VPN panel, and the signed
 catalog the panel installs them from. They come in packages:
 
 - [`payments/`](payments): payment methods. Each is a small stateless HTTP service that
@@ -40,7 +40,7 @@ internal/adapter/    the shared server of protocol 1: env, loopback check, Beare
 internal/catalog/    adapter.json and index.json: types, checks, signing
 cmd/index/           builds and signs dist/index.json; verifies it
 internal/community/  the registry of community addons: snapshots, checks, the sync plan, the GitHub API
-cmd/community/       the indexer of getmikan/marketplace-community: sync, build, verify
+cmd/community/       the indexer of ShelbyHell/marketplace-community: sync, build, verify
 PROTOCOL.md          protocol 1, for payment adapter authors
 PROTOCOL-v2.md       protocol 2, for the authors of every other addon
 ```
@@ -142,7 +142,7 @@ go run ./cmd/index verify index.json
 > [!CAUTION]
 > Official addons are only the ones in this repository's signed catalog, with images under `ghcr.io/shelbyhell/`. **The Hikari project considers every fork of an addon, every third-party catalog and every "unofficial" addon potentially unsafe.** They are not ours: we do not review or support them and are not responsible for how they work. The panel marks them as not verified by Hikari.
 
-Third-party addons are listed in [getmikan/marketplace-community](https://github.com/ShelbyHell/hikari-marketplace-community):
+Third-party addons are listed in [ShelbyHell/marketplace-community](https://github.com/ShelbyHell/hikari-marketplace-community):
 snapshots of the authors' releases, synced every hour by `cmd/community` (its README says
 how an addon gets there and how it is revoked). Being listed there is not a review either.
 

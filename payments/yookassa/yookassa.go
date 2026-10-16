@@ -157,7 +157,7 @@ func (y *yooKassa) CreateInvoice(ctx context.Context, r adapter.InvoiceRequest) 
 		"amount":       ykAmount{Value: adapter.FormatMinor(r.Amount), Currency: r.Currency},
 		"capture":      true,
 		"confirmation": map[string]string{"type": "redirect", "return_url": r.ReturnURL},
-		"metadata":     map[string]string{"hikari_payment_id": strconv.FormatInt(r.PaymentID, 10)},
+		"metadata":     map[string]string{"mikan_payment_id": strconv.FormatInt(r.PaymentID, 10)},
 	}
 	if r.Description != "" {
 		body["description"] = adapter.Truncate(r.Description, 128)

@@ -1,7 +1,7 @@
 # Hikari addon protocol, version 2
 
 Every addon that is not a payment method speaks protocol 2: a Telegram bot, admin pages,
-anything else that works with the [Hikari](https://github.com/Miroshka000/Hikari) panel. Payment
+anything else that works with the [Hikari](https://github.com/ShelbyHell/Hikari) panel. Payment
 adapters keep [PROTOCOL.md](PROTOCOL.md) (protocol 1) unchanged. Protocol 2 needs panel and
 host 0.5.1.0 or later.
 
@@ -31,7 +31,7 @@ An addon of this repository lives in `tools/<id>/` and is published as
   "resources": {"mem_mb": 128},
   "image": "ghcr.io/shelbyhell/tool-telegram",
   "min_panel": "0.5.1.0-rc.6",
-  "homepage": "https://github.com/Miroshka000/Hikari"
+  "homepage": "https://github.com/ShelbyHell/Hikari"
 }
 ```
 
@@ -153,7 +153,7 @@ the real token and the polling; the bot's id comes from `getMe`.
   `editMessageMedia`, `deleteMessage`, `deleteMessages`, `sendPhoto`, `sendDocument`,
   `sendMediaGroup`, `sendChatAction`, `copyMessage`, `forwardMessage`, `sendSticker`,
   `sendAnimation`, `sendVideo`, `sendAudio`, `sendVoice`, `sendLocation`, `pinChatMessage`,
-  `unpinChatMessage`. `X-Mikan-Priority: notice | bulk` picks the outbox lane.
+  `unpinChatMessage`. `X-hikari-Priority: notice | bulk` picks the outbox lane.
 - Everything else, `setWebhook`, `sendInvoice`, `createInvoiceLink`, `answerPreCheckoutQuery`,
   `refundStarPayment`, `logOut` and `close` among them, is refused with 403 `not allowed for
   addons`.

@@ -1,7 +1,7 @@
-// community keeps the registry of community addons, getmikan/marketplace-community (used by
+// community keeps the registry of community addons, ShelbyHell/marketplace-community (used by
 // its workflow). The registry's README says what it is; internal/community how.
 //
-//	GITHUB_TOKEN=… community sync -root registry -registry getmikan/marketplace-community -base <sha> [-dry-run]
+//	GITHUB_TOKEN=… community sync -root registry -registry ShelbyHell/marketplace-community -base <sha> [-dry-run]
 //	    reads again the repositories the registry has, finds new ones by the Hikari-addon
 //	    topic, commits what may go in by itself to main and opens a pull request for the rest
 //	community check -root registry
@@ -121,7 +121,7 @@ type source interface {
 func syncCmd(ctx context.Context, args []string, out io.Writer) error {
 	fs := flag.NewFlagSet("sync", flag.ContinueOnError)
 	root := fs.String("root", ".", "a checkout of the registry")
-	registry := fs.String("registry", "getmikan/marketplace-community", "the registry's repository")
+	registry := fs.String("registry", "ShelbyHell/marketplace-community", "the registry's repository")
 	base := fs.String("base", "", "the commit the checkout is at")
 	cat := fs.String("catalog", CatalogURL, "the official catalog: its URL, or a file with its .sig")
 	dry := fs.Bool("dry-run", false, "print what would be done, change nothing")

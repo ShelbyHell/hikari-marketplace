@@ -1,4 +1,4 @@
-// Package community is the registry of community addons (getmikan/marketplace-community):
+// Package community is the registry of community addons (ShelbyHell/marketplace-community):
 // addons of third-party authors, which Hikari lists and does not vouch for. The registry holds
 // a snapshot of each one, addons/<owner>/<id>.json, taken from the latest release of the
 // author's repository by the indexer (cmd/community), and revoked.json, the addons Hikari took
