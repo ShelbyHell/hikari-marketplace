@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 // platega is the Platega API: every request carries X-MerchantId and X-Secret. Without a

@@ -1,6 +1,6 @@
-# mikan marketplace
+# Hikari marketplace
 
-Addons for the [mikan](https://github.com/Miroshka000/mikan) VPN panel, and the signed
+Addons for the [Hikari](https://github.com/Miroshka000/Hikari) VPN panel, and the signed
 catalog the panel installs them from. They come in packages:
 
 - [`payments/`](payments): payment methods. Each is a small stateless HTTP service that
@@ -15,7 +15,7 @@ catalog the panel installs them from. They come in packages:
 
 | id | | Kind |
 |---|---|---|
-| [`telegram`](tools/telegram) | the official mikan bot: subscription menu, purchases, devices, notices. Built from mikan's source at the release its version names | `bot`, mode `client` |
+| [`telegram`](tools/telegram) | the official Hikari bot: subscription menu, purchases, devices, notices. Built from Hikari's source at the release its version names | `bot`, mode `client` |
 
 Each needs panel 0.5.1.0 or later (the bot: the release it is built from).
 
@@ -68,9 +68,9 @@ curl -H 'Authorization: Bearer test' http://127.0.0.1:41873/v1/info
        "description": {"ru": "Карты", "en": "Cards"},
        "version": "1.0.0",
        "protocol": 1,
-       "image": "ghcr.io/getmikan/adapter-examplepay",
+       "image": "ghcr.io/shelbyhell/adapter-examplepay",
        "min_panel": "0.4.3",
-       "homepage": "https://github.com/getmikan/marketplace/tree/main/payments/examplepay"
+       "homepage": "https://github.com/ShelbyHell/hikari-marketplace/tree/main/payments/examplepay"
      }
      ```
      `category` is the package, the directory it is in. `version` belongs to this
@@ -103,8 +103,8 @@ then:
 2. Requires a newer adapter version for changes to its image inputs. Documentation and
    tests alone need no bump. A change to shared server code or Go dependencies requires
    a version increase for every adapter whose Dockerfile copies them (not the telegram
-   tool, which builds mikan's source). Versions are `x.y.z`, optionally with a fourth
-   number and a prerelease, as mikan's (`0.5.1.0-rc.6`).
+   tool, which builds Hikari's source). Versions are `x.y.z`, optionally with a fourth
+   number and a prerelease, as Hikari's (`0.5.1.0-rc.6`).
 3. Builds and pushes only changed images for amd64 and arm64, each tagged with its own
    adapter version (also passed to the build as `VERSION`). Unchanged image digests come
    from the verified previous catalog.
@@ -132,17 +132,17 @@ Before the first release the maintainer must:
 Check a published catalog by hand:
 
 ```sh
-curl -fsSLO https://github.com/getmikan/marketplace/releases/latest/download/index.json
-curl -fsSLO https://github.com/getmikan/marketplace/releases/latest/download/index.json.sig
+curl -fsSLO https://github.com/ShelbyHell/hikari-marketplace/releases/latest/download/index.json
+curl -fsSLO https://github.com/ShelbyHell/hikari-marketplace/releases/latest/download/index.json.sig
 go run ./cmd/index verify index.json
 ```
 
 ## ⛔ Forks and third-party addons
 
 > [!CAUTION]
-> Official addons are only the ones in this repository's signed catalog, with images under `ghcr.io/getmikan/`. **The mikan project considers every fork of an addon, every third-party catalog and every "unofficial" addon potentially unsafe.** They are not ours: we do not review or support them and are not responsible for how they work. The panel marks them as not verified by mikan.
+> Official addons are only the ones in this repository's signed catalog, with images under `ghcr.io/shelbyhell/`. **The Hikari project considers every fork of an addon, every third-party catalog and every "unofficial" addon potentially unsafe.** They are not ours: we do not review or support them and are not responsible for how they work. The panel marks them as not verified by Hikari.
 
-Third-party addons are listed in [getmikan/marketplace-community](https://github.com/getmikan/marketplace-community):
+Third-party addons are listed in [getmikan/marketplace-community](https://github.com/ShelbyHell/hikari-marketplace-community):
 snapshots of the authors' releases, synced every hour by `cmd/community` (its README says
 how an addon gets there and how it is revoked). Being listed there is not a review either.
 

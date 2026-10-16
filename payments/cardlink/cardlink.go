@@ -17,8 +17,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 // cardlink is the Cardlink API (https://cardlink.link/reference/api): every request carries

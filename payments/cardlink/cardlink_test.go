@@ -14,8 +14,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 const (
@@ -81,7 +81,7 @@ func (f *fakeCardlink) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			answer(http.StatusForbidden, map[string]any{"success": false, "message": "api:error.bill_not_found"})
 			return
 		}
-		answer(http.StatusOK, map[string]any{"id": billID, "order_id": "mikan-4217", "status": f.status, "active": f.active,
+		answer(http.StatusOK, map[string]any{"id": billID, "order_id": "Hikari-4217", "status": f.status, "active": f.active,
 			"type": "NORMAL", "amount": f.amount, "currency_in": f.currency, "created_at": "2026-10-14 10:00:00", "success": true})
 	default:
 		w.WriteHeader(http.StatusNotFound)
@@ -150,7 +150,7 @@ func wantError(t *testing.T, code int, out map[string]any, wantCode int, wantErr
 }
 
 func invoiceBody(s map[string]any) map[string]any {
-	return map[string]any{"settings": s, "payment_id": 4217, "idempotency_key": "mikan-4217", "amount": 19900, "currency": "RUB",
+	return map[string]any{"settings": s, "payment_id": 4217, "idempotency_key": "Hikari-4217", "amount": 19900, "currency": "RUB",
 		"description": "VPN · Месяц", "return_url": "https://panel.example.com/tg"}
 }
 
@@ -206,7 +206,7 @@ func TestCreateInvoice(t *testing.T) {
 		t.Fatalf("invoice: %d %v", code, out)
 	}
 	in := e.fake.created[0]
-	want := url.Values{"amount": {"199.00"}, "currency_in": {"RUB"}, "shop_id": {shopID}, "order_id": {"mikan-4217"}, "type": {"normal"},
+	want := url.Values{"amount": {"199.00"}, "currency_in": {"RUB"}, "shop_id": {shopID}, "order_id": {"Hikari-4217"}, "type": {"normal"},
 		"ttl": {"86400"}, "description": {"VPN · Месяц"}, "success_url": {"https://panel.example.com/tg"}, "fail_url": {"https://panel.example.com/tg"},
 		"return_url": {"https://panel.example.com/tg"}}
 	if e.fake.paths[0] != "POST /bill/create" || in.Encode() != want.Encode() {
@@ -255,7 +255,7 @@ func TestCreateInvoiceShopOnAnotherDomain(t *testing.T) {
 		t.Fatalf("invoice: %d %v", code, out)
 	}
 	if len(e.fake.created) != 2 || !e.fake.created[0].Has("success_url") || e.fake.created[1].Has("success_url") ||
-		e.fake.created[1].Has("fail_url") || e.fake.created[1].Has("return_url") || e.fake.created[1].Get("order_id") != "mikan-4217" {
+		e.fake.created[1].Has("fail_url") || e.fake.created[1].Has("return_url") || e.fake.created[1].Get("order_id") != "Hikari-4217" {
 		t.Fatalf("the second bill must go without the return URLs: %v", e.fake.created)
 	}
 	if !strings.Contains(e.logs.String(), "trying without them") || !strings.Contains(e.logs.String(), "payment_id=4217") {
@@ -348,19 +348,19 @@ func (e *env) webhook(body string) (int, map[string]any) {
 
 func TestWebhook(t *testing.T) {
 	e := newEnv(t)
-	sig := signature(apiToken, "199.00", "mikan-4217")
+	sig := signature(apiToken, "199.00", "Hikari-4217")
 
-	code, out := e.webhook(postback("SUCCESS", "199.00", "mikan-4217", billID, sig))
+	code, out := e.webhook(postback("SUCCESS", "199.00", "Hikari-4217", billID, sig))
 	if code != http.StatusOK || out["external_id"] != billID {
 		t.Fatalf("success: %d %v", code, out)
 	}
-	code, out = e.webhook(postback("OVERPAID", "199.00", "mikan-4217", billID, strings.ToLower(sig)))
+	code, out = e.webhook(postback("OVERPAID", "199.00", "Hikari-4217", billID, strings.ToLower(sig)))
 	if code != http.StatusOK || out["external_id"] != billID {
 		t.Fatalf("overpaid, lowercase signature: %d %v", code, out)
 	}
 	// Other statuses are not ours to act on.
 	for _, st := range []string{"FAIL", "UNDERPAID", ""} {
-		if code, out = e.webhook(postback(st, "199.00", "mikan-4217", billID, sig)); code != http.StatusOK || len(out) != 0 {
+		if code, out = e.webhook(postback(st, "199.00", "Hikari-4217", billID, sig)); code != http.StatusOK || len(out) != 0 {
 			t.Fatalf("status %q: %d %v", st, code, out)
 		}
 	}
@@ -371,9 +371,9 @@ func TestWebhook(t *testing.T) {
 			"SignatureValue": {signature(apiToken, "123", "AbxvAM6vJk")}},
 		"payout": {"TrsId": {"ZqmawDQ9B7l"}, "Amount": {"50010.00000000"}, "IsAuto": {"false"}, "Status": {"SUCCESS"},
 			"SignatureValue": {signature(apiToken, "50010.00000000", "ZqmawDQ9B7l")}},
-		"refund": {"Id": {"R1"}, "Amount": {"199.00"}, "Currency": {"RUB"}, "Status": {"SUCCESS"}, "InvId": {"mikan-4217"},
+		"refund": {"Id": {"R1"}, "Amount": {"199.00"}, "Currency": {"RUB"}, "Status": {"SUCCESS"}, "InvId": {"Hikari-4217"},
 			"BillId": {billID}, "PaymentId": {"P1"}, "SignatureValue": {signature(apiToken, "199.00", "RUB", billID, "P1", "R1")}},
-		"chargeback": {"Id": {"C1"}, "Status": {"SUCCESS"}, "InvId": {"mikan-4217"}, "BillId": {billID}, "PaymentId": {"P1"},
+		"chargeback": {"Id": {"C1"}, "Status": {"SUCCESS"}, "InvId": {"Hikari-4217"}, "BillId": {billID}, "PaymentId": {"P1"},
 			"SignatureValue": {signature(apiToken, billID, "P1", "C1")}},
 	} {
 		if code, out = e.webhook(form.Encode()); code != http.StatusOK || len(out) != 0 {
@@ -385,18 +385,18 @@ func TestWebhook(t *testing.T) {
 		wantError(t, code, out, http.StatusBadRequest, adapter.CodeBadRequest)
 	}
 	// Forged: signed with another token, over another sum, or not signed.
-	code, out = e.webhook(postback("SUCCESS", "199.00", "mikan-4217", billID, signature("guess", "199.00", "mikan-4217")))
+	code, out = e.webhook(postback("SUCCESS", "199.00", "Hikari-4217", billID, signature("guess", "199.00", "Hikari-4217")))
 	wantError(t, code, out, http.StatusBadRequest, adapter.CodeBadRequest)
-	code, out = e.webhook(postback("SUCCESS", "1.00", "mikan-4217", billID, sig))
+	code, out = e.webhook(postback("SUCCESS", "1.00", "Hikari-4217", billID, sig))
 	wantError(t, code, out, http.StatusBadRequest, adapter.CodeBadRequest)
-	code, out = e.webhook(postback("SUCCESS", "199.00", "mikan-4217", billID, ""))
+	code, out = e.webhook(postback("SUCCESS", "199.00", "Hikari-4217", billID, ""))
 	wantError(t, code, out, http.StatusBadRequest, adapter.CodeBadRequest)
 	code, out = e.webhook(`{"Status":"SUCCESS"}`)
 	wantError(t, code, out, http.StatusBadRequest, adapter.CodeBadRequest)
 	code, out = e.webhook("%zz")
 	wantError(t, code, out, http.StatusBadRequest, adapter.CodeBadRequest)
 	// Signed and paid, but no bill.
-	code, out = e.webhook(postback("SUCCESS", "199.00", "mikan-4217", "", sig))
+	code, out = e.webhook(postback("SUCCESS", "199.00", "Hikari-4217", "", sig))
 	wantError(t, code, out, http.StatusBadRequest, adapter.CodeBadRequest)
 }
 

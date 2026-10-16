@@ -9,10 +9,10 @@ import (
 
 const tool = `{"id":"bot","category":"tools","name":{"ru":"Бот","en":"Bot"},"description":{"ru":"б","en":"b"},"version":"1.0.0",` +
 	`"protocol":2,"kind":"bot","mode":"client","permissions":["bot","kv"],"resources":{"mem_mb":128},` +
-	`"image":"ghcr.io/getmikan/tool-bot","min_panel":"0.5.1.0","homepage":"https://example.com"}`
+	`"image":"ghcr.io/shelbyhell/tool-bot","min_panel":"0.5.1.0","homepage":"https://example.com"}`
 
 const payment = `{"id":"pay","category":"payments","name":{"ru":"П","en":"P"},"description":{"ru":"п","en":"p"},"version":"1.0.0",` +
-	`"protocol":1,"image":"ghcr.io/getmikan/adapter-pay","min_panel":"0.4.3","homepage":"https://example.com"}`
+	`"protocol":1,"image":"ghcr.io/shelbyhell/adapter-pay","min_panel":"0.4.3","homepage":"https://example.com"}`
 
 // The protocol fields pass what the panel's Entry.normalize and the host's normalize keep,
 // and nothing they would drop.
@@ -31,7 +31,7 @@ func TestProtocolFields(t *testing.T) {
 		"the least memory":     strings.Replace(tool, `{"mem_mb":128}`, `{"mem_mb":64}`, 1),
 		"the most memory":      strings.Replace(tool, `{"mem_mb":128}`, `{"mem_mb":256}`, 1),
 		"a payment adapter":    payment,
-		"a mikan prerelease":   strings.Replace(tool, `"version":"1.0.0"`, `"version":"0.5.1.0-rc.6"`, 1),
+		"a Hikari prerelease":  strings.Replace(tool, `"version":"1.0.0"`, `"version":"0.5.1.0-rc.6"`, 1),
 		"a prerelease panel":   strings.Replace(tool, `"min_panel":"0.5.1.0"`, `"min_panel":"0.5.1.0-rc.6"`, 1),
 		"a three-number panel": strings.Replace(tool, `"min_panel":"0.5.1.0"`, `"min_panel":"0.5.1"`, 1),
 	} {
@@ -109,8 +109,8 @@ func TestEntriesInIndex(t *testing.T) {
 	if want, _ := json.Marshal(old); got["pay"] != string(want) {
 		t.Errorf("a payment entry changed:\n%s\nwas\n%s", got["pay"], want)
 	}
-	// The panel's names (Entry in mikan's internal/panel/addons), between protocol and image.
-	if want := `"protocol":2,"kind":"bot","mode":"client","permissions":["bot","kv"],"resources":{"mem_mb":128},"image":"ghcr.io/getmikan/tool-bot"`; !strings.Contains(got["bot"], want) {
+	// The panel's names (Entry in Hikari's internal/panel/addons), between protocol and image.
+	if want := `"protocol":2,"kind":"bot","mode":"client","permissions":["bot","kv"],"resources":{"mem_mb":128},"image":"ghcr.io/shelbyhell/tool-bot"`; !strings.Contains(got["bot"], want) {
 		t.Errorf("a tool entry: %s", got["bot"])
 	}
 	if strings.Contains(got["bot"], `"resources":{}`) || strings.Contains(strings.Replace(got["bot"], `"mem_mb":128`, "", 1), "mem_mb") {

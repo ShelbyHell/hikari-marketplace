@@ -16,8 +16,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 // rollyPay is the RollyPay API (https://docs.rollypay.io): X-API-Key and a fresh X-Nonce

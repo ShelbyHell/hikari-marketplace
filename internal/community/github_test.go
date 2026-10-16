@@ -37,17 +37,17 @@ func (f *fakeGitHub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	reply := func(v any) { _ = json.NewEncoder(w).Encode(v) }
 	switch p := r.URL.Path; {
 	case p == "/search/repositories":
-		if !strings.Contains(r.URL.Query().Get("q"), "topic:mikan-addon") {
+		if !strings.Contains(r.URL.Query().Get("q"), "topic:Hikari-addon") {
 			http.Error(w, "q", http.StatusBadRequest)
 			return
 		}
-		reply(map[string]any{"items": []any{map[string]any{"id": 7, "full_name": "Author/hello", "topics": []string{"mikan-addon"}, "stargazers_count": 2}}})
+		reply(map[string]any{"items": []any{map[string]any{"id": 7, "full_name": "Author/hello", "topics": []string{"Hikari-addon"}, "stargazers_count": 2}}})
 	case p == "/repositories/7":
 		reply(map[string]any{"id": 7, "full_name": "Author/hello"})
 	case p == "/repositories/8":
 		http.NotFound(w, r)
 	case p == "/repos/Author/hello/releases/latest":
-		reply(map[string]any{"assets": []any{map[string]any{"id": 1, "name": "mikan-addon.json", "size": 10}, map[string]any{"id": 2, "name": "other.zip"}}})
+		reply(map[string]any{"assets": []any{map[string]any{"id": 1, "name": "Hikari-addon.json", "size": 10}, map[string]any{"id": 2, "name": "other.zip"}}})
 	case p == "/repos/Author/hello/releases/assets/1":
 		if r.Header.Get("Accept") != "application/octet-stream" {
 			http.Error(w, "accept", http.StatusBadRequest)

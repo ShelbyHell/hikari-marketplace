@@ -1,4 +1,4 @@
-// adapter-rollypay is the mikan payment adapter for RollyPay (protocol v1, PROTOCOL.md).
+// adapter-rollypay is the Hikari payment adapter for RollyPay (protocol v1, PROTOCOL.md).
 package main
 
 import (
@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 //go:embed adapter.json

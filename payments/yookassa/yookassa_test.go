@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 const (
@@ -203,25 +203,25 @@ func TestCheck(t *testing.T) {
 
 func TestCreateInvoice(t *testing.T) {
 	e := newEnv(t)
-	id := e.invoice("mikan-4217", 19900)
+	id := e.invoice("Hikari-4217", 19900)
 	if len(e.yk.created) != 1 {
 		t.Fatalf("created %d payments", len(e.yk.created))
 	}
-	if e.yk.idem["mikan-4217"] != id {
+	if e.yk.idem["Hikari-4217"] != id {
 		t.Fatalf("Idempotence-Key: %v", e.yk.idem)
 	}
 	body, _ := json.Marshal(e.yk.created[0])
 	for _, want := range []string{`"amount":{"currency":"RUB","value":"199.00"}`, `"capture":true`,
-		`"confirmation":{"return_url":"https://panel.example.com/tg","type":"redirect"}`, `"mikan_payment_id":"4217"`} {
+		`"confirmation":{"return_url":"https://panel.example.com/tg","type":"redirect"}`, `"hikari_payment_id":"4217"`} {
 		if !strings.Contains(string(body), want) {
 			t.Errorf("payment body %s: no %s", body, want)
 		}
 	}
 	// A retry with the same key gets the same payment, not a second one.
-	if again := e.invoice("mikan-4217", 19900); again != id || len(e.yk.created) != 1 {
+	if again := e.invoice("Hikari-4217", 19900); again != id || len(e.yk.created) != 1 {
 		t.Fatalf("retry: %s, %d payments", again, len(e.yk.created))
 	}
-	if other := e.invoice("mikan-4218", 50); other == id || e.yk.payments[other].Amount.Value != "0.50" {
+	if other := e.invoice("Hikari-4218", 50); other == id || e.yk.payments[other].Amount.Value != "0.50" {
 		t.Fatalf("second payment: %s %+v", other, e.yk.payments[other])
 	}
 
@@ -235,7 +235,7 @@ func TestCreateInvoice(t *testing.T) {
 
 func TestStatus(t *testing.T) {
 	e := newEnv(t)
-	id := e.invoice("mikan-1", 19900)
+	id := e.invoice("Hikari-1", 19900)
 	for ykStatus, want := range map[string]string{"pending": "pending", "waiting_for_capture": "pending", "succeeded": "paid", "canceled": "canceled"} {
 		e.yk.payments[id].Status = ykStatus
 		code, out := e.call(http.MethodPost, "/v1/status", map[string]any{"settings": settings(), "external_id": id})
@@ -278,7 +278,7 @@ func TestWebhook(t *testing.T) {
 
 func TestRefund(t *testing.T) {
 	e := newEnv(t)
-	id := e.invoice("mikan-1", 19900)
+	id := e.invoice("Hikari-1", 19900)
 	e.yk.payments[id].Status = "succeeded"
 	refund := map[string]any{"settings": settings(), "external_id": id, "amount": 19900}
 	for range 2 {

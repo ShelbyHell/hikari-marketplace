@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 var (
@@ -104,7 +104,7 @@ func TestListRealAdapters(t *testing.T) {
 		if l.ID == "telegram" {
 			category, prefix = "tools", "tool-"
 		}
-		if l.Dir != category+"/"+l.ID || l.Image != "ghcr.io/getmikan/"+prefix+l.ID || l.Version == "" {
+		if l.Dir != category+"/"+l.ID || l.Image != "ghcr.io/shelbyhell/"+prefix+l.ID || l.Version == "" {
 			t.Errorf("%s: %+v", l.ID, l)
 		}
 	}
@@ -120,8 +120,8 @@ func TestSignVerifyRoundTrip(t *testing.T) {
 	runOK(t, append([]string{"build", "-root", "../..", "-out", out}, digestFlags...)...)
 	file := filepath.Join(out, "index.json")
 	got := runOK(t, "verify", "-key", pub, file)
-	if !strings.Contains(got, "ok: payments cryptobot ") || !strings.Contains(got, " ghcr.io/getmikan/adapter-cryptobot@"+digestB) ||
-		!strings.Contains(got, "ok: payments yookassa "+v+" ghcr.io/getmikan/adapter-yookassa@"+digestA) {
+	if !strings.Contains(got, "ok: payments cryptobot ") || !strings.Contains(got, " ghcr.io/shelbyhell/adapter-cryptobot@"+digestB) ||
+		!strings.Contains(got, "ok: payments yookassa "+v+" ghcr.io/shelbyhell/adapter-yookassa@"+digestA) {
 		t.Fatalf("verify: %s", got)
 	}
 
@@ -178,20 +178,20 @@ func TestManifestChecks(t *testing.T) {
 	}
 	runFails(t, "no adapters", "list", "-root", root)
 	ok := `{"id":"demo","category":"payments","name":{"ru":"Демо","en":"Demo"},"description":{"ru":"д","en":"d"},"version":"1.0.0","protocol":1,` +
-		`"image":"ghcr.io/getmikan/adapter-demo","min_panel":"0.4.3","homepage":"https://example.com"}`
+		`"image":"ghcr.io/shelbyhell/adapter-demo","min_panel":"0.4.3","homepage":"https://example.com"}`
 	write("payments", "demo", ok)
 	runOK(t, "list", "-root", root)
 
 	for name, body := range map[string]string{
 		"unknown field":    strings.Replace(ok, `"protocol":1`, `"protocol":1,"extra":true`, 1),
-		"foreign image":    strings.Replace(ok, "ghcr.io/getmikan/adapter-demo", "docker.io/evil/demo", 1),
+		"foreign image":    strings.Replace(ok, "ghcr.io/shelbyhell/adapter-demo", "docker.io/evil/demo", 1),
 		"no en name":       strings.Replace(ok, `"en":"Demo"`, `"de":"Demo"`, 1),
 		"bad version":      strings.Replace(ok, `"version":"1.0.0"`, `"version":"latest"`, 1),
 		"http homepage":    strings.Replace(ok, "https://example.com", "http://example.com", 1),
 		"no category":      strings.Replace(ok, `"category":"payments",`, "", 1),
 		"unknown category": strings.Replace(ok, `"category":"payments"`, `"category":"games"`, 1),
 		"payment protocol": strings.Replace(ok, `"protocol":1`, `"protocol":2`, 1),
-		"tool image":       strings.Replace(ok, "ghcr.io/getmikan/adapter-demo", "ghcr.io/getmikan/tool-demo", 1),
+		"tool image":       strings.Replace(ok, "ghcr.io/shelbyhell/adapter-demo", "ghcr.io/shelbyhell/tool-demo", 1),
 	} {
 		write("payments", "demo", body)
 		if err := run([]string{"list", "-root", root}, &bytes.Buffer{}); err == nil {
@@ -216,13 +216,13 @@ func TestManifestChecks(t *testing.T) {
 	if err := json.Unmarshal([]byte(runOK(t, "list", "-root", root)), &got); err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 3 || got[2] != (listed{ID: "tg", Version: "1.0.0", Dir: "tools/tg", Image: "ghcr.io/getmikan/tool-tg"}) {
+	if len(got) != 3 || got[2] != (listed{ID: "tg", Version: "1.0.0", Dir: "tools/tg", Image: "ghcr.io/shelbyhell/tool-tg"}) {
 		t.Fatalf("list: %+v", got)
 	}
 	write("tools", "tg", strings.Replace(tool, `"protocol":2`, `"protocol":1`, 1))
 	runFails(t, "older panels", "list", "-root", root)
 	write("tools", "tg", strings.Replace(tool, "tool-tg", "adapter-tg", 1))
-	runFails(t, "image must be ghcr.io/getmikan/tool-tg", "list", "-root", root)
+	runFails(t, "image must be ghcr.io/shelbyhell/tool-tg", "list", "-root", root)
 	write("tools", "tg", tool)
 
 	// A payment adapter in tools/, and one id in two packages.
@@ -264,7 +264,7 @@ func TestReleasePlanOnlyChangedAdapter(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(p.Build) != 1 || p.Build[0].ID != "rollypay" || p.Build[0].Version != "9.0.0" || p.Build[0].Dir != "payments/rollypay" ||
-		p.Build[0].Image != "ghcr.io/getmikan/adapter-rollypay" || len(p.Reuse) != 5 {
+		p.Build[0].Image != "ghcr.io/shelbyhell/adapter-rollypay" || len(p.Reuse) != 5 {
 		t.Fatalf("plan: %+v", p)
 	}
 	for id, digest := range p.Reuse {
@@ -393,7 +393,7 @@ func TestTelegramEntry(t *testing.T) {
 		}
 		if e.Category != "tools" || e.Protocol != 2 || e.Kind != "bot" || e.Mode != "client" || e.Resources.MemMB != 128 ||
 			strings.Join(e.Permissions, ",") != "bot,users:read,users:write,billing:invoice,events,kv" ||
-			e.Image != "ghcr.io/getmikan/tool-telegram" || e.MinPanel != e.Version {
+			e.Image != "ghcr.io/shelbyhell/tool-telegram" || e.MinPanel != e.Version {
 			t.Errorf("telegram: %+v", e)
 		}
 		return
@@ -430,9 +430,9 @@ func TestOwnInputsOnly(t *testing.T) {
 	}
 }
 
-// The telegram tool builds mikan's source: the shared code of this repository is no input
+// The telegram tool builds Hikari's source: the shared code of this repository is no input
 // of its image, so a change there does not ask for a new telegram version (which must be a
-// mikan release).
+// Hikari release).
 func TestReleasePlanSelfContainedTool(t *testing.T) {
 	ms, prev := realIndex(t)
 	bumped := slices.Clone(ms)
@@ -457,7 +457,7 @@ func TestReleasePlanSelfContainedTool(t *testing.T) {
 		}
 	}
 	p, err = makeReleasePlan("../..", ms, prev, []string{"tools/telegram/adapter.json"})
-	if err != nil || len(p.Build) != 1 || p.Build[0] != (listed{ID: "telegram", Version: "0.5.1.0", Dir: "tools/telegram", Image: "ghcr.io/getmikan/tool-telegram"}) {
-		t.Fatalf("a new mikan release: %+v, %v", p, err)
+	if err != nil || len(p.Build) != 1 || p.Build[0] != (listed{ID: "telegram", Version: "0.5.1.0", Dir: "tools/telegram", Image: "ghcr.io/shelbyhell/tool-telegram"}) {
+		t.Fatalf("a new Hikari release: %+v, %v", p, err)
 	}
 }

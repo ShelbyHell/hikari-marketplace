@@ -1,4 +1,4 @@
-// adapter-cryptobot is the mikan payment adapter for CryptoBot's Crypto Pay
+// adapter-cryptobot is the Hikari payment adapter for CryptoBot's Crypto Pay
 // (protocol v1, PROTOCOL.md).
 package main
 
@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 //go:embed adapter.json

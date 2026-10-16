@@ -20,8 +20,8 @@ const (
 	SigLimit  = 4096
 )
 
-// ErrNoRelease: the repository has no release, or none with a mikan addon file.
-var ErrNoRelease = errors.New("community: no release with mikan-addon.json or index.json")
+// ErrNoRelease: the repository has no release, or none with a Hikari addon file.
+var ErrNoRelease = errors.New("community: no release with Hikari-addon.json or index.json")
 
 // GitHub is the REST API the indexer needs, with the workflow's token. API is the base
 // (https://api.github.com; tests point it at a server of their own), Registry the registry's
@@ -73,7 +73,7 @@ func (g *GitHub) call(ctx context.Context, method, path string, in, out any) err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
-	req.Header.Set("User-Agent", "mikan-community-indexer")
+	req.Header.Set("User-Agent", "Hikari-community-indexer")
 	if g.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+g.Token)
 	}
@@ -138,7 +138,7 @@ type asset struct {
 	Size int64  `json:"size"`
 }
 
-// Release is the latest release's addon file (mikan-addon.json, else index.json) and its
+// Release is the latest release's addon file (Hikari-addon.json, else index.json) and its
 // signature (nil without one).
 func (g *GitHub) Release(ctx context.Context, fullName string) (file, sig []byte, err error) {
 	var rel struct {
@@ -159,7 +159,7 @@ func (g *GitHub) Release(ctx context.Context, fullName string) (file, sig []byte
 		}
 		return nil
 	}
-	for _, name := range []string{"mikan-addon.json", "index.json"} {
+	for _, name := range []string{"Hikari-addon.json", "index.json"} {
 		f := find(name)
 		if f == nil {
 			continue
@@ -187,7 +187,7 @@ func (g *GitHub) download(ctx context.Context, fullName string, a asset, limit i
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/octet-stream")
-	req.Header.Set("User-Agent", "mikan-community-indexer")
+	req.Header.Set("User-Agent", "Hikari-community-indexer")
 	if g.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+g.Token)
 	}

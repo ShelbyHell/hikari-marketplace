@@ -3,7 +3,7 @@
 Cryptocurrency through [@CryptoBot](https://t.me/CryptoBot)'s
 [Crypto Pay API](https://help.crypt.bot/crypto-pay-api). Invoices are priced in fiat (RUB,
 USD or EUR) and the payer picks the coin. Protocol: [PROTOCOL.md](../../PROTOCOL.md).
-Image: `ghcr.io/getmikan/adapter-cryptobot`.
+Image: `ghcr.io/shelbyhell/adapter-cryptobot`.
 
 ## Settings
 

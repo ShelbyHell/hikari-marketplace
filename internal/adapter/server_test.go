@@ -181,10 +181,10 @@ func TestInvoiceChecked(t *testing.T) {
 	p := &stub{}
 	h, _ := handler(t, p)
 	ok := func() map[string]any {
-		return map[string]any{"settings": good, "payment_id": 4217, "idempotency_key": "mikan-4217", "amount": 19900, "currency": "RUB",
+		return map[string]any{"settings": good, "payment_id": 4217, "idempotency_key": "Hikari-4217", "amount": 19900, "currency": "RUB",
 			"return_url": "https://panel.example/tg", "webhook_url": "https://panel.example/pay/addon/stub/t"}
 	}
-	if code, out := post(h, "/v1/invoices", ok()); code != http.StatusOK || out["external_id"] != "ext-mikan-4217" {
+	if code, out := post(h, "/v1/invoices", ok()); code != http.StatusOK || out["external_id"] != "ext-Hikari-4217" {
 		t.Fatalf("good invoice: %d %v", code, out)
 	}
 	for field, v := range map[string]any{

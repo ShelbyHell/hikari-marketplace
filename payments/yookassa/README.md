@@ -1,7 +1,7 @@
 # ЮKassa (YooKassa) adapter
 
 Bank cards and SBP through [ЮKassa](https://yookassa.ru), API v3. Rubles only.
-Protocol: [PROTOCOL.md](../../PROTOCOL.md). Image: `ghcr.io/getmikan/adapter-yookassa`.
+Protocol: [PROTOCOL.md](../../PROTOCOL.md). Image: `ghcr.io/shelbyhell/adapter-yookassa`.
 
 ## Settings
 
@@ -20,7 +20,7 @@ shows for this adapter and turn on `payment.succeeded` and `payment.canceled`.
 | | |
 |---|---|
 | check | `GET /me` with the keys; 401 → `bad_credentials` |
-| invoice | `POST /payments` with `Idempotence-Key: <idempotency_key>`, `capture: true`, a redirect confirmation to `return_url` (required), the description cut to 128 characters, metadata `mikan_payment_id` |
+| invoice | `POST /payments` with `Idempotence-Key: <idempotency_key>`, `capture: true`, a redirect confirmation to `return_url` (required), the description cut to 128 characters, metadata `hikari_payment_id` |
 | status | `GET /payments/<id>`: `succeeded` → paid, `canceled` → canceled, anything else (`pending`, `waiting_for_capture`) → pending; the amount and currency are YooKassa's |
 | webhook | YooKassa does not sign notifications: the source address must be one of [YooKassa's](https://yookassa.ru/developers/using-api/webhooks#ip), else `bad_request`. `payment.*` events name the payment; others (`refund.*`) are ignored |
 | refund | `POST /refunds` in the payment's currency, with an idempotence key derived from the payment id and the amount, so a retry does not refund twice; a `canceled` refund → `yookassa_refund_canceled` |

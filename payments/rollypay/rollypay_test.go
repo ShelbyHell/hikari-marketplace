@@ -14,8 +14,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 const (
@@ -158,7 +158,7 @@ func settings(kv ...any) map[string]any {
 }
 
 func invoiceBody(s map[string]any) map[string]any {
-	return map[string]any{"settings": s, "payment_id": 4217, "idempotency_key": "mikan-4217", "amount": 19900, "currency": "RUB",
+	return map[string]any{"settings": s, "payment_id": 4217, "idempotency_key": "Hikari-4217", "amount": 19900, "currency": "RUB",
 		"description": "VPN · Месяц", "return_url": "https://panel.example.com/tg"}
 }
 
@@ -210,7 +210,7 @@ func TestCreateInvoice(t *testing.T) {
 		t.Fatalf("invoice: %d %v", code, out)
 	}
 	in := e.fake.created[0]
-	if in["amount"] != "199.00" || in["payment_currency"] != "RUB" || in["order_id"] != "mikan-4217" ||
+	if in["amount"] != "199.00" || in["payment_currency"] != "RUB" || in["order_id"] != "Hikari-4217" ||
 		in["success_redirect_url"] != "https://panel.example.com/tg" || in["fail_redirect_url"] != "https://panel.example.com/tg" {
 		t.Fatalf("request: %v", in)
 	}
@@ -234,7 +234,7 @@ func TestCreateInvoice(t *testing.T) {
 	}
 
 	// A closed payment under the key is not handed out again.
-	e.fake.payments["mikan-4217"].Status = "expired"
+	e.fake.payments["Hikari-4217"].Status = "expired"
 	code, out = e.call(http.MethodPost, "/v1/invoices", invoiceBody(settings()))
 	wantError(t, code, out, http.StatusUnprocessableEntity, "rollypay_order_exists")
 }
@@ -242,7 +242,7 @@ func TestCreateInvoice(t *testing.T) {
 func TestCreateInvoiceMethodAndSandbox(t *testing.T) {
 	e := newEnv(t)
 	b := invoiceBody(settings("method", "sbp", "test", true))
-	b["idempotency_key"] = "mikan-4218"
+	b["idempotency_key"] = "Hikari-4218"
 	if code, out := e.call(http.MethodPost, "/v1/invoices", b); code != http.StatusOK {
 		t.Fatalf("invoice: %d %v", code, out)
 	}
@@ -288,7 +288,7 @@ func (e *env) webhook(headers map[string][]string, body string) (int, map[string
 func TestWebhook(t *testing.T) {
 	e := newEnv(t)
 	const ts = "1767225600"
-	paid := `{"event_type":"payment.paid","payment_id":"` + payID + `","order_id":"mikan-4217","status":"paid","amount":"199.00","currency":"RUB"}`
+	paid := `{"event_type":"payment.paid","payment_id":"` + payID + `","order_id":"Hikari-4217","status":"paid","amount":"199.00","currency":"RUB"}`
 	signed := func(secret, ts, body string) map[string][]string {
 		return map[string][]string{"X-Timestamp": {ts}, "X-Signature": {sign(secret, ts, body)}}
 	}

@@ -1,13 +1,13 @@
 # Telegram bot
 
-The official mikan bot as an addon: the subscription menu, purchases, devices and notices.
+The official Hikari bot as an addon: the subscription menu, purchases, devices and notices.
 Protocol: [PROTOCOL-v2.md](../../PROTOCOL-v2.md), kind `bot`, mode `client`. Image:
-`ghcr.io/getmikan/tool-telegram`.
+`ghcr.io/shelbyhell/tool-telegram`.
 
-The code is not here: the image builds `cmd/mikan-telegram` of
-[mikan](https://github.com/Miroshka000/mikan) at the tag `v<version>`, where `<version>` is
+The code is not here: the image builds `cmd/Hikari-telegram` of
+[Hikari](https://github.com/Miroshka000/Hikari) at the tag `v<version>`, where `<version>` is
 this tool's version in [adapter.json](adapter.json) (CI passes it as the `VERSION` build
-argument). So the tool's version is always the mikan release it comes from, and a new
+argument). So the tool's version is always the Hikari release it comes from, and a new
 release of the bot is a new version here.
 
 The panel keeps the bot token, the polling, Telegram Stars and the Mini App; the addon only
@@ -25,7 +25,7 @@ state in the panel's KV and serves nothing itself. It has no settings of its own
 | `kv` | menus and transfers between taps |
 
 Releasing a new bot: set `version` (and `min_panel` when the bot needs a newer panel) to the
-mikan release after its tag is pushed, then merge. Building the image by hand:
+Hikari release after its tag is pushed, then merge. Building the image by hand:
 
 ```sh
 docker buildx build --platform linux/amd64 \

@@ -14,8 +14,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 // yooKassa is the YooKassa API v3: Basic auth with the shop id and the secret key.
@@ -157,7 +157,7 @@ func (y *yooKassa) CreateInvoice(ctx context.Context, r adapter.InvoiceRequest) 
 		"amount":       ykAmount{Value: adapter.FormatMinor(r.Amount), Currency: r.Currency},
 		"capture":      true,
 		"confirmation": map[string]string{"type": "redirect", "return_url": r.ReturnURL},
-		"metadata":     map[string]string{"mikan_payment_id": strconv.FormatInt(r.PaymentID, 10)},
+		"metadata":     map[string]string{"hikari_payment_id": strconv.FormatInt(r.PaymentID, 10)},
 	}
 	if r.Description != "" {
 		body["description"] = adapter.Truncate(r.Description, 128)
@@ -254,7 +254,7 @@ func (y *yooKassa) Refund(ctx context.Context, s adapter.Settings, externalID st
 
 func refundKey(paymentID string, amount int64) string {
 	sum := sha256.Sum256([]byte(paymentID + ":" + strconv.FormatInt(amount, 10)))
-	return "mikan-refund-" + hex.EncodeToString(sum[:16])
+	return "Hikari-refund-" + hex.EncodeToString(sum[:16])
 }
 
 // yooKassaNets are where YooKassa sends notifications from

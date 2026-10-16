@@ -2,14 +2,14 @@
   "id": "telegram",
   "category": "tools",
   "name": {"ru": "Telegram-бот", "en": "Telegram bot"},
-  "description": {"ru": "Официальный бот mikan: меню подписки, покупка, устройства, уведомления", "en": "The official mikan bot: subscription menu, purchases, devices, notices"},
+  "description": {"ru": "Официальный бот Hikari: меню подписки, покупка, устройства, уведомления", "en": "The official Hikari bot: subscription menu, purchases, devices, notices"},
   "version": "0.5.1.0-rc.11",
   "protocol": 2,
   "kind": "bot",
   "mode": "client",
   "permissions": ["bot", "users:read", "users:write", "billing:invoice", "events", "kv"],
   "resources": {"mem_mb": 128},
-  "image": "ghcr.io/getmikan/tool-telegram",
+  "image": "ghcr.io/shelbyhell/tool-telegram",
   "min_panel": "0.5.1.0-rc.11",
-  "homepage": "https://github.com/Miroshka000/mikan"
+  "homepage": "https://github.com/ShelbyHell/Hikari"
 }

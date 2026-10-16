@@ -1,7 +1,7 @@
 # Cardlink adapter
 
 Bank cards and SBP through [Cardlink](https://cardlink.link/reference/api).
-Protocol: [PROTOCOL.md](../../PROTOCOL.md). Image: `ghcr.io/getmikan/adapter-cardlink`. Currencies: RUB, USD, EUR.
+Protocol: [PROTOCOL.md](../../PROTOCOL.md). Image: `ghcr.io/shelbyhell/adapter-cardlink`. Currencies: RUB, USD, EUR.
 
 ## Settings
 

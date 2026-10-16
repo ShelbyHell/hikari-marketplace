@@ -37,12 +37,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          base="$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)"
-          test -n "$base"
-          mkdir previous
-          gh release download "$base" --repo "$GITHUB_REPOSITORY" \
-            --pattern index.json --pattern index.json.sig --dir previous
-          go run ./cmd/index plan -previous previous/index.json -base "$base" -out plan.json > /dev/null
+          base=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null || echo "")
+          if [ -n "$base" ]; then
+            mkdir previous
+            gh release download "$base" --repo "$GITHUB_REPOSITORY" \
+              --pattern index.json --pattern index.json.sig --dir previous
+            go run ./cmd/index plan -previous previous/index.json -base "$base" -out plan.json > /dev/null
+          else
+            # First release: no previous catalog, build and push every adapter.
+            go run ./cmd/index list | jq -c '{build: ., reuse: {}}' > plan.json
+          fi
       - id: plan
         run: |
           echo "adapters=$(jq -c .build plan.json)" >> "$GITHUB_OUTPUT"

@@ -1,12 +1,12 @@
 // Package community is the registry of community addons (getmikan/marketplace-community):
-// addons of third-party authors, which mikan lists and does not vouch for. The registry holds
+// addons of third-party authors, which Hikari lists and does not vouch for. The registry holds
 // a snapshot of each one, addons/<owner>/<id>.json, taken from the latest release of the
-// author's repository by the indexer (cmd/community), and revoked.json, the addons mikan took
+// author's repository by the indexer (cmd/community), and revoked.json, the addons Hikari took
 // out by hand. index.json is all of them in one file, signed with the catalog's key: the panel
 // reads it as it reads the catalog and never goes to the authors' hosts for it.
 //
-// An author's release carries what a panel reads from a third-party source (mikan's
-// internal/panel/addons/sources.go): mikan-addon.json, one entry or {title, key, adapters},
+// An author's release carries what a panel reads from a third-party source (Hikari's
+// internal/panel/addons/sources.go): Hikari-addon.json, one entry or {title, key, adapters},
 // and optionally its .sig, base64(ed25519.Sign(the author's key, the file's bytes)). The
 // checks here are the panel's; the panel makes them again on its side.
 package community
@@ -30,7 +30,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 // Format is the version of index.json ("version" in the file).
@@ -39,14 +39,14 @@ const Format = 1
 // Topic is the GitHub topic an author puts on a repository to be found; NoIndex keeps a
 // repository out whatever else it has.
 const (
-	Topic   = "mikan-addon"
+	Topic   = "Hikari-addon"
 	NoIndex = "noindex"
 )
 
 // MaxEntries bounds what one repository may list, as the panel bounds a source.
 const MaxEntries = 16
 
-// Permissions an addon may ask for: the panel's list (internal/panel/addons of mikan), wider
+// Permissions an addon may ask for: the panel's list (internal/panel/addons of Hikari), wider
 // than the catalog's, whose own tools need less. Wide are the ones that reach every subscriber:
 // a snapshot that newly asks for one waits for a review.
 var (
@@ -113,7 +113,7 @@ func (a Addon) Owner() string {
 // Path is where the snapshot sits in the registry.
 func (a Addon) Path() string { return "addons/" + a.Owner() + "/" + a.ID + ".json" }
 
-// Revoked is an addon mikan took out of the registry, by id or by repository (every addon of
+// Revoked is an addon Hikari took out of the registry, by id or by repository (every addon of
 // it). A panel shows it to the admin who has it installed and installs nothing of it again.
 type Revoked struct {
 	ID     string `json:"id,omitempty"`
@@ -137,7 +137,7 @@ var (
 	panelRe   = regexp.MustCompile(`^\d+\.\d+\.\d+(?:\.\d+)?(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$`)
 	repoRe    = regexp.MustCompile(`^github\.com/[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})/[A-Za-z0-9._-]{1,100}$`)
 	dateRe    = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
-	// The image grammar the panel and the host accept (addons.ValidImage of mikan).
+	// The image grammar the panel and the host accept (addons.ValidImage of Hikari).
 	hostRe      = regexp.MustCompile(`^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*(?::[0-9]{1,5})?$`)
 	componentRe = regexp.MustCompile(`^[a-z0-9]+(?:(?:[._]|__|-+)[a-z0-9]+)*$`)
 )
@@ -274,7 +274,7 @@ type Doc struct {
 }
 
 var (
-	ErrBadFile    = errors.New("community: the release file is not a mikan addon")
+	ErrBadFile    = errors.New("community: the release file is not a Hikari addon")
 	ErrSignature  = errors.New("community: the release signature does not verify")
 	ErrKeyNeeded  = errors.New("community: the release is signed but names no key")
 	ErrNoEntries  = errors.New("community: nothing in the release can be installed")

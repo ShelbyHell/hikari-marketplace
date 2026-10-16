@@ -151,7 +151,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		attrs = append(attrs, "external_id", v.ExternalID)
 	}
 	if status == http.StatusUnauthorized {
-		w.Header().Set("WWW-Authenticate", `Bearer realm="mikan-adapter"`)
+		w.Header().Set("WWW-Authenticate", `Bearer realm="Hikari-adapter"`)
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")

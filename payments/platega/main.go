@@ -1,4 +1,4 @@
-// adapter-platega is the mikan payment adapter for Platega (protocol v1, PROTOCOL.md).
+// adapter-platega is the Hikari payment adapter for Platega (protocol v1, PROTOCOL.md).
 package main
 
 import (
@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 //go:embed adapter.json

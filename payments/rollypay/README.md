@@ -1,7 +1,7 @@
 # RollyPay adapter
 
 SBP, cards and crypto through [RollyPay](https://docs.rollypay.io/). Protocol:
-[PROTOCOL.md](../../PROTOCOL.md). Image: `ghcr.io/getmikan/adapter-rollypay`. Currency: RUB.
+[PROTOCOL.md](../../PROTOCOL.md). Image: `ghcr.io/shelbyhell/adapter-rollypay`. Currency: RUB.
 API base: `https://rollypay.io/api/v1`.
 
 ## Settings

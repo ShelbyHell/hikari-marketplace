@@ -107,7 +107,7 @@ chosen node (scope `net:proxy`), so the setting keeps working.
 ### Your own addons
 
 - The catalog stays signed: what it lists, the maintainers have reviewed.
-- An admin can still run an addon of their own: `mikan addon install --image ghcr.io/me/x@sha256:…`
+- An admin can still run an addon of their own: `Hikari addon install --image ghcr.io/me/x@sha256:…`
   installs an unsigned image after a plain warning, and the panel marks it **unverified**
   everywhere. The same scopes and consent apply.
 - `tools/example/`: a minimal tool in Go with tests, the starting point for authors, and

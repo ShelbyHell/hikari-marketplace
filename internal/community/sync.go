@@ -295,7 +295,7 @@ func reviewBody(r Repo, doc Doc, why []string, skipped []Skip) string {
 	b.WriteString("\nBefore merging:\n- [ ] the repository is the author's own work, not a copy of someone else's addon\n" +
 		"- [ ] the image is built from this repository (a workflow in it pushes it)\n" +
 		"- [ ] the permissions fit what the addon says it does\n" +
-		"\nmikan lists community addons and does not vouch for them: merging is not a review of the code.\n")
+		"\nHikari lists community addons and does not vouch for them: merging is not a review of the code.\n")
 	return b.String()
 }
 
@@ -309,7 +309,7 @@ func sortedKeys[V any](m map[int64]V) []int64 {
 }
 
 // Fingerprint of an author's key as the panel shows it: the first 16 bytes of its SHA-256 in
-// groups of four hex digits (addons.Fingerprint of mikan).
+// groups of four hex digits (addons.Fingerprint of Hikari).
 func Fingerprint(key string) string {
 	pub, err := catalogKey(key)
 	if err != nil {

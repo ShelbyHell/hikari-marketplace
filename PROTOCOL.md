@@ -1,6 +1,6 @@
-# mikan payment adapter protocol, version 1
+# Hikari payment adapter protocol, version 1
 
-A payment adapter connects the [mikan](https://github.com/Miroshka000/mikan) panel to one
+A payment adapter connects the [Hikari](https://github.com/Miroshka000/Hikari) panel to one
 payment provider. It is a small stateless HTTP service in a container on the same host as
 the panel. It knows the provider's API and nothing about users or tariffs.
 
@@ -9,7 +9,7 @@ the panel. It knows the provider's API and nothing about users or tariffs.
   itself: it asks the adapter for the invoice status and compares the amount and the
   currency with the payment it created.
 - **The adapter** gets the settings with every request and must not store or log them.
-- **The host** (the `mikan` installer/CLI) installs, updates and removes adapter
+- **The host** (the `Hikari` installer/CLI) installs, updates and removes adapter
   containers from the signed catalog.
 
 ## Transport
@@ -88,7 +88,7 @@ panel calls it before saving changed settings.
 {
   "settings": {"shop_id": "123456", "secret_key": "live_…"},
   "payment_id": 4217,
-  "idempotency_key": "mikan-4217",
+  "idempotency_key": "Hikari-4217",
   "amount": 19900,
   "currency": "RUB",
   "description": "VPN · Месяц",
@@ -158,7 +158,7 @@ that, so a webhook can never mark a payment paid by itself.
 → `200 {}` when the provider accepted the refund (it may still be processing). The request
 carries no idempotency key: **a retried refund must not refund twice**. Derive the
 provider's idempotency key from `external_id` and `amount` (the YooKassa adapter uses
-`mikan-refund-` + the first 16 bytes of `sha256("<external_id>:<amount>")` in hex). The
+`Hikari-refund-` + the first 16 bytes of `sha256("<external_id>:<amount>")` in hex). The
 refund is in the payment's own currency.
 
 Without the `refund` capability the endpoint answers `not_found`.
@@ -183,10 +183,10 @@ Without the `refund` capability the endpoint answers `not_found`.
 ## Catalog
 
 The panel offers the adapters listed in `index.json`, published with every catalog release
-of [getmikan/marketplace](https://github.com/getmikan/marketplace):
+of [getmikan/marketplace](https://github.com/ShelbyHell/hikari-marketplace):
 
-- `https://github.com/getmikan/marketplace/releases/latest/download/index.json`
-- `https://github.com/getmikan/marketplace/releases/latest/download/index.json.sig`
+- `https://github.com/ShelbyHell/hikari-marketplace/releases/latest/download/index.json`
+- `https://github.com/ShelbyHell/hikari-marketplace/releases/latest/download/index.json.sig`
 
 ```json
 {
@@ -200,29 +200,29 @@ of [getmikan/marketplace](https://github.com/getmikan/marketplace):
       "description": {"ru": "Банковские карты и СБП", "en": "Bank cards and SBP"},
       "version": "1.0.0",
       "protocol": 1,
-      "image": "ghcr.io/getmikan/adapter-yookassa",
+      "image": "ghcr.io/shelbyhell/adapter-yookassa",
       "digest": "sha256:…",
       "min_panel": "0.4.3",
-      "homepage": "https://github.com/getmikan/marketplace/tree/main/payments/yookassa"
+      "homepage": "https://github.com/ShelbyHell/hikari-marketplace/tree/main/payments/yookassa"
     }
   ]
 }
 ```
 
 - `version` is the format version (1). `updated` is RFC 3339 UTC.
-- `id`: lowercase letters, digits and dashes. `image` is `ghcr.io/getmikan/adapter-<id>`;
+- `id`: lowercase letters, digits and dashes. `image` is `ghcr.io/shelbyhell/adapter-<id>`;
   images are pulled **by digest only** (`image@digest`), the multi-arch (amd64, arm64)
   index digest.
 - `category`: the package, `payments` or `tools`. The `adapters` list holds both, so a
   catalog from before the packages, without `category`, holds payment adapters. A payment
   adapter speaks this protocol (1); a tool never does, so a panel that knows no categories
-  never offers a tool as a payment method. A tool's image is `ghcr.io/getmikan/tool-<id>`;
+  never offers a tool as a payment method. A tool's image is `ghcr.io/shelbyhell/tool-<id>`;
   its entry adds `kind`, `mode`, `permissions` and `resources` ([PROTOCOL-v2.md](PROTOCOL-v2.md)).
 - `min_panel`: the oldest panel version that may install it.
 - An adapter whose `protocol` the panel does not know is not offered.
 
 `index.json.sig` is `base64(ed25519.Sign(key, <the exact bytes of index.json>))`, signed
-with the mikan release key, the same key as the panel's release manifest. The panel and the
+with the Hikari release key, the same key as the panel's release manifest. The panel and the
 host verify it with the public key built into them,
 `Z3wSIPBSaJxh5CsGO8eINI0aM0kyrQ46EcJSNeH85W8=` (raw Ed25519, base64), before they parse
 the file.

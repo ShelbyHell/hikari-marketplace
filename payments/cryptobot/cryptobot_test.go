@@ -14,8 +14,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 const (
@@ -46,7 +46,7 @@ func (f *fakeCryptoBot) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var res any
 	switch r.URL.Path {
 	case "/getMe":
-		res = map[string]any{"app_id": 1, "name": "mikan"}
+		res = map[string]any{"app_id": 1, "name": "Hikari"}
 	case "/createInvoice":
 		f.created = append(f.created, in)
 		f.n++
@@ -197,21 +197,21 @@ func TestCheck(t *testing.T) {
 
 func TestCreateInvoice(t *testing.T) {
 	e := newEnv(t)
-	id := e.invoice("mikan-4217", 19900, "RUB")
+	id := e.invoice("Hikari-4217", 19900, "RUB")
 	if len(e.cb.created) != 1 {
 		t.Fatalf("created %d invoices", len(e.cb.created))
 	}
 	body, _ := json.Marshal(e.cb.created[0])
 	want := `{"amount":"199.00","currency_type":"fiat","description":"VPN · Месяц","expires_in":3600,"fiat":"RUB",` +
-		`"paid_btn_name":"callback","paid_btn_url":"https://panel.example.com/tg","payload":"mikan-4217"}`
+		`"paid_btn_name":"callback","paid_btn_url":"https://panel.example.com/tg","payload":"Hikari-4217"}`
 	if string(body) != want {
 		t.Fatalf("createInvoice body\n got %s\nwant %s", body, want)
 	}
 	// A retry with the same key finds the active invoice instead of creating another.
-	if again := e.invoice("mikan-4217", 19900, "RUB"); again != id || len(e.cb.created) != 1 {
+	if again := e.invoice("Hikari-4217", 19900, "RUB"); again != id || len(e.cb.created) != 1 {
 		t.Fatalf("retry: %s, %d invoices", again, len(e.cb.created))
 	}
-	usd := e.invoice("mikan-4218", 250, "USD")
+	usd := e.invoice("Hikari-4218", 250, "USD")
 	if usd == id || e.cb.created[1]["fiat"] != "USD" || e.cb.created[1]["amount"] != "2.50" {
 		t.Fatalf("USD invoice: %v", e.cb.created[1])
 	}
@@ -221,7 +221,7 @@ func TestCreateInvoice(t *testing.T) {
 
 func TestStatus(t *testing.T) {
 	e := newEnv(t)
-	id := e.invoice("mikan-1", 19900, "RUB")
+	id := e.invoice("Hikari-1", 19900, "RUB")
 	n, _ := strconv.ParseInt(id, 10, 64)
 	for cbStatus, want := range map[string]string{"active": "pending", "paid": "paid", "expired": "canceled"} {
 		e.cb.invoices[n].Status = cbStatus

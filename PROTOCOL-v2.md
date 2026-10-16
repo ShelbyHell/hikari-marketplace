@@ -1,7 +1,7 @@
-# mikan addon protocol, version 2
+# Hikari addon protocol, version 2
 
 Every addon that is not a payment method speaks protocol 2: a Telegram bot, admin pages,
-anything else that works with the [mikan](https://github.com/Miroshka000/mikan) panel. Payment
+anything else that works with the [Hikari](https://github.com/Miroshka000/Hikari) panel. Payment
 adapters keep [PROTOCOL.md](PROTOCOL.md) (protocol 1) unchanged. Protocol 2 needs panel and
 host 0.5.1.0 or later.
 
@@ -10,12 +10,12 @@ host 0.5.1.0 or later.
   approved (permissions) through its **Panel API**.
 - **The addon** is a container next to the panel. It keeps no files: its state goes to the
   panel's KV store, which is backed up with the panel.
-- **The host** (`mikan`) installs, updates and removes the container and generates its tokens.
+- **The host** (`Hikari`) installs, updates and removes the container and generates its tokens.
 
 ## Catalog entry (`adapter.json`)
 
 An addon of this repository lives in `tools/<id>/` and is published as
-`ghcr.io/getmikan/tool-<id>`. Its `adapter.json` is the catalog entry without the digest:
+`ghcr.io/shelbyhell/tool-<id>`. Its `adapter.json` is the catalog entry without the digest:
 
 ```json
 {
@@ -29,9 +29,9 @@ An addon of this repository lives in `tools/<id>/` and is published as
   "mode": "client",
   "permissions": ["bot", "users:read", "users:write", "billing:invoice", "events", "kv"],
   "resources": {"mem_mb": 128},
-  "image": "ghcr.io/getmikan/tool-telegram",
+  "image": "ghcr.io/shelbyhell/tool-telegram",
   "min_panel": "0.5.1.0-rc.6",
-  "homepage": "https://github.com/Miroshka000/mikan"
+  "homepage": "https://github.com/Miroshka000/Hikari"
 }
 ```
 
@@ -42,7 +42,7 @@ An addon of this repository lives in `tools/<id>/` and is published as
 | `mode` | `http` (the default when absent): the addon serves `/v2/*` to the panel. `client`: it serves nothing and only calls the panel (a bot on a framework); the host checks that its container keeps running 5 s. |
 | `permissions` | what the addon asks for, each at most once, from the list below. |
 | `resources.mem_mb` | 64 to 256 MiB; absent or 0 is the host's default, 128. |
-| `version`, `min_panel` | `x.y.z`, optionally a fourth number (mikan's releases, `0.5.1.0`) and a prerelease (`-rc.6`). A panel older than `min_panel` does not offer the addon; mind that `0.5.1.0` is newer than `0.5.1.0-rc.6`. |
+| `version`, `min_panel` | `x.y.z`, optionally a fourth number (Hikari's releases, `0.5.1.0`) and a prerelease (`-rc.6`). A panel older than `min_panel` does not offer the addon; mind that `0.5.1.0` is newer than `0.5.1.0-rc.6`. |
 
 `go run ./cmd/index list` refuses what the panel and the host would drop: an unknown kind,
 mode or permission, a permission twice, memory out of range, another protocol, or any of
@@ -164,8 +164,8 @@ the real token and the polling; the bot's id comes from `getMe`.
 
 ## Sources
 
-The catalog's addons come from `ghcr.io/getmikan/`, pinned by the multi-arch digest of the
+The catalog's addons come from `ghcr.io/shelbyhell/`, pinned by the multi-arch digest of the
 signed catalog, and run on the host network on loopback. An admin may also run an addon of
-their own, protocol 2 only: a custom image by digest (on the bridge `mikan-addons`, its port
+their own, protocol 2 only: a custom image by digest (on the bridge `Hikari-addons`, its port
 published on loopback) or an external process on `http://127.0.0.1:<port>`. The panel marks
 those "not verified" and shows the permissions the admin gives them.

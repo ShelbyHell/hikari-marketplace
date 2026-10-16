@@ -1,7 +1,7 @@
 # Platega adapter
 
 SBP, cards, Sberpay, international payments and crypto through [Platega](https://docs.platega.io/).
-Protocol: [PROTOCOL.md](../../PROTOCOL.md). Image: `ghcr.io/getmikan/adapter-platega`. Currency: RUB.
+Protocol: [PROTOCOL.md](../../PROTOCOL.md). Image: `ghcr.io/shelbyhell/adapter-platega`. Currency: RUB.
 
 ## Settings
 

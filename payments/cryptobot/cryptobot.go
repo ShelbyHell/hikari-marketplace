@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 // invoiceTTL is how long an invoice can be paid, as the panel's built-in CryptoBot did.

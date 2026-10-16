@@ -2,7 +2,7 @@
 // its workflow). The registry's README says what it is; internal/community how.
 //
 //	GITHUB_TOKEN=… community sync -root registry -registry getmikan/marketplace-community -base <sha> [-dry-run]
-//	    reads again the repositories the registry has, finds new ones by the mikan-addon
+//	    reads again the repositories the registry has, finds new ones by the Hikari-addon
 //	    topic, commits what may go in by itself to main and opens a pull request for the rest
 //	community check -root registry
 //	    checks every snapshot and revoked.json
@@ -30,12 +30,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getmikan/marketplace/internal/catalog"
-	"github.com/getmikan/marketplace/internal/community"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/community"
 )
 
 // CatalogURL is the official catalog, whose ids no community addon may take.
-const CatalogURL = "https://github.com/getmikan/marketplace/releases/latest/download/index.json"
+const CatalogURL = "https://github.com/ShelbyHell/hikari-marketplace/releases/latest/download/index.json"
 
 func main() {
 	if err := run(context.Background(), os.Args[1:], os.Stdout); err != nil {

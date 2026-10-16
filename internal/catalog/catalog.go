@@ -23,9 +23,9 @@ import (
 	"time"
 )
 
-// PublicKey is the public half of the mikan release key (raw Ed25519, base64): the same
+// PublicKey is the public half of the Hikari release key (raw Ed25519, base64): the same
 // key the panel and the host verify the catalog with.
-const PublicKey = "Z3wSIPBSaJxh5CsGO8eINI0aM0kyrQ46EcJSNeH85W8="
+const PublicKey = "vsFZSTqFm9CoL68mA4XY8GYIMmq+VO6/gA8fcp5S90s="
 
 // Format is the index.json format version ("version" in the file).
 const Format = 1
@@ -65,10 +65,10 @@ const (
 )
 
 // ImagePrefix is where the payment adapters' images are published: ImagePrefix + id.
-const ImagePrefix = "ghcr.io/getmikan/adapter-"
+const ImagePrefix = "ghcr.io/shelbyhell/adapter-"
 
 // ToolImagePrefix is where the tools' images are published: ToolImagePrefix + id.
-const ToolImagePrefix = "ghcr.io/getmikan/tool-"
+const ToolImagePrefix = "ghcr.io/shelbyhell/tool-"
 
 // ImageFor is the image an adapter of the category is published as.
 func ImageFor(category, id string) string {
@@ -103,7 +103,7 @@ type Manifest struct {
 
 // Entry is one adapter in index.json. The protocol 2 fields are left out when empty, so a
 // payment adapter's entry is the same as before them; their names are the panel's
-// (Entry in internal/panel/addons of mikan).
+// (Entry in internal/panel/addons of Hikari).
 type Entry struct {
 	ID          string            `json:"id"`
 	Category    string            `json:"category"`
@@ -143,8 +143,8 @@ type Index struct {
 var (
 	ErrSignature = errors.New("catalog: bad signature")
 	idRe         = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,31}$`)
-	// versionRe is the panel's version grammar (internal/release of mikan): x.y.z with an
-	// optional fourth number, as mikan's own releases have (0.5.1.0), and a prerelease.
+	// versionRe is the panel's version grammar (internal/release of Hikari): x.y.z with an
+	// optional fourth number, as Hikari's own releases have (0.5.1.0), and a prerelease.
 	versionRe = regexp.MustCompile(`^\d+\.\d+\.\d+(?:\.\d+)?(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$`)
 	digestRe  = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
 )
@@ -186,7 +186,7 @@ func (m Manifest) Check() error {
 }
 
 // checkProtocol is what the panel and the host check of the protocol fields before they
-// offer an entry (Entry.normalize in mikan's internal/panel/addons, normalize in its
+// offer an entry (Entry.normalize in Hikari's internal/panel/addons, normalize in its
 // installer/src/addon.rs): an entry they would drop is refused here, never published.
 func (m Manifest) checkProtocol() error {
 	if m.Protocol == PaymentProtocol {

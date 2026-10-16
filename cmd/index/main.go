@@ -28,7 +28,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 func main() {
@@ -182,7 +182,7 @@ func plan(args []string, out io.Writer) error {
 
 func makeReleasePlan(root string, ms []catalog.Manifest, prev catalog.Index, paths []string) (releasePlan, error) {
 	// A package whose image takes nothing from the build context but its own directory (the
-	// telegram tool builds mikan's source at its tag) does not depend on the shared code.
+	// telegram tool builds Hikari's source at its tag) does not depend on the shared code.
 	selfContained := map[string]bool{}
 	for _, m := range ms {
 		own, err := ownInputsOnly(root, dir(m))

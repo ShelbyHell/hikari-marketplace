@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/getmikan/marketplace/internal/adapter"
-	"github.com/getmikan/marketplace/internal/catalog"
+	"github.com/ShelbyHell/hikari-marketplace/internal/adapter"
+	"github.com/ShelbyHell/hikari-marketplace/internal/catalog"
 )
 
 const (
@@ -115,7 +115,7 @@ func wantError(t *testing.T, code int, out map[string]any, wantCode int, wantErr
 }
 
 func invoiceBody(s map[string]any) map[string]any {
-	return map[string]any{"settings": s, "payment_id": 4217, "idempotency_key": "mikan-4217", "amount": 19900, "currency": "RUB",
+	return map[string]any{"settings": s, "payment_id": 4217, "idempotency_key": "Hikari-4217", "amount": 19900, "currency": "RUB",
 		"description": "VPN · Месяц", "return_url": "https://panel.example.com/tg"}
 }
 
@@ -163,7 +163,7 @@ func TestCreateInvoice(t *testing.T) {
 	pd := in["paymentDetails"].(map[string]any)
 	if e.fake.paths[0] != "POST /v2/transaction/process" || pd["amount"] != 199.0 || pd["currency"] != "RUB" ||
 		in["return"] != "https://panel.example.com/tg" || in["failedUrl"] != "https://panel.example.com/tg" ||
-		in["orderId"] != "mikan-4217" || in["description"] != "VPN · Месяц" {
+		in["orderId"] != "Hikari-4217" || in["description"] != "VPN · Месяц" {
 		t.Fatalf("request: %v %v", e.fake.paths, in)
 	}
 	if _, ok := in["paymentMethod"]; ok {
