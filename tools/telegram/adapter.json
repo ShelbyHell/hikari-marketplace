@@ -3,13 +3,13 @@
   "category": "tools",
   "name": {"ru": "Telegram-бот", "en": "Telegram bot"},
   "description": {"ru": "Официальный бот Hikari: меню подписки, покупка, устройства, уведомления", "en": "The official Hikari bot: subscription menu, purchases, devices, notices"},
-  "version": "0.5.1.2-rc.5",
+  "version": "0.5.1.2-rc.8",
   "protocol": 2,
   "kind": "bot",
   "mode": "client",
   "permissions": ["bot", "users:read", "users:write", "billing:invoice", "events", "kv"],
   "resources": {"mem_mb": 128},
   "image": "ghcr.io/shelbyhell/tool-telegram",
-  "min_panel": "0.5.1.2-rc.5",
+  "min_panel": "0.5.1.2-rc.8",
   "homepage": "https://github.com/ShelbyHell/Hikari"
 }
