@@ -10,6 +10,6 @@
   "permissions": ["bot", "users:read", "users:write", "billing:invoice", "events", "kv"],
   "resources": {"mem_mb": 128},
   "image": "ghcr.io/shelbyhell/tool-telegram",
-  "min_panel": "0.5.1.2-rc.9",
+  "min_panel": "0.5.1.4-rc.14",
   "homepage": "https://github.com/ShelbyHell/Hikari"
 }
